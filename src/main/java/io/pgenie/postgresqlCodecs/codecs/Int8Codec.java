@@ -1,5 +1,6 @@
 package io.pgenie.postgresqlCodecs.codecs;
 
+import java.nio.ByteBuffer;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Types;
@@ -10,6 +11,16 @@ final class Int8Codec implements Codec<Long> {
 
     public String name() {
         return "int8";
+    }
+
+    @Override
+    public int oid() {
+        return 20;
+    }
+
+    @Override
+    public int arrayOid() {
+        return 1016;
     }
 
     @Override
@@ -44,6 +55,19 @@ final class Int8Codec implements Codec<Long> {
             value = value * 10 + (input.charAt(i++) - '0');
         }
         return new Codec.ParsingResult<>(negative ? -value : value, i);
+    }
+
+    @Override
+    public byte[] encode(Long value) {
+        return Codec.allocate(8).putLong(value).array();
+    }
+
+    @Override
+    public Long decodeBinary(ByteBuffer buf, int length) throws Codec.ParseException {
+        if (length != 8) {
+            throw new Codec.ParseException("Expected 8 bytes for int8, got " + length);
+        }
+        return buf.getLong();
     }
 
 }

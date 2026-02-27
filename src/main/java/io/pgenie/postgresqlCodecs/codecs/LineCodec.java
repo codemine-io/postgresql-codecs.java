@@ -18,6 +18,16 @@ final class LineCodec implements Codec<PGline> {
     }
 
     @Override
+    public int oid() {
+        return 628;
+    }
+
+    @Override
+    public int arrayOid() {
+        return 629;
+    }
+
+    @Override
     public void bind(PreparedStatement ps, int index, PGline value) throws SQLException {
         if (value != null) {
             ps.setObject(index, value);
@@ -54,6 +64,24 @@ final class LineCodec implements Codec<PGline> {
         } catch (java.sql.SQLException e) {
             throw new Codec.ParseException(input, offset, "Invalid line: " + e.getMessage());
         }
+    }
+
+    @Override
+    public byte[] encode(PGline value) {
+        java.nio.ByteBuffer buf = Codec.allocate(24);
+        buf.putDouble(value.a);
+        buf.putDouble(value.b);
+        buf.putDouble(value.c);
+        return buf.array();
+    }
+
+    @Override
+    public PGline decodeBinary(java.nio.ByteBuffer buf, int length) throws Codec.ParseException {
+        if (length != 24) throw new Codec.ParseException("Binary line must be 24 bytes, got " + length);
+        double a = buf.getDouble();
+        double b = buf.getDouble();
+        double c = buf.getDouble();
+        return new PGline(a, b, c);
     }
 
 }

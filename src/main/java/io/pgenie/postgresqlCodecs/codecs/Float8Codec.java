@@ -1,5 +1,6 @@
 package io.pgenie.postgresqlCodecs.codecs;
 
+import java.nio.ByteBuffer;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Types;
@@ -13,6 +14,16 @@ final class Float8Codec implements Codec<Double> {
 
     public String name() {
         return "float8";
+    }
+
+    @Override
+    public int oid() {
+        return 701;
+    }
+
+    @Override
+    public int arrayOid() {
+        return 1022;
     }
 
     @Override
@@ -55,6 +66,19 @@ final class Float8Codec implements Codec<Double> {
                 || c == '+' || c == '-'
                 || c == 'N' || c == 'a' || c == 'I' || c == 'n'
                 || c == 'f' || c == 'i' || c == 't' || c == 'y';
+    }
+
+    @Override
+    public byte[] encode(Double value) {
+        return Codec.allocate(8).putDouble(value).array();
+    }
+
+    @Override
+    public Double decodeBinary(ByteBuffer buf, int length) throws Codec.ParseException {
+        if (length != 8) {
+            throw new Codec.ParseException("Expected 8 bytes for float8, got " + length);
+        }
+        return buf.getDouble();
     }
 
 }

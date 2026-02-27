@@ -1,5 +1,6 @@
 package io.pgenie.postgresqlCodecs.codecs;
 
+import java.nio.ByteBuffer;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Types;
@@ -13,6 +14,16 @@ final class Float4Codec implements Codec<Float> {
 
     public String name() {
         return "float4";
+    }
+
+    @Override
+    public int oid() {
+        return 700;
+    }
+
+    @Override
+    public int arrayOid() {
+        return 1021;
     }
 
     @Override
@@ -55,6 +66,19 @@ final class Float4Codec implements Codec<Float> {
                 || c == '+' || c == '-'
                 || c == 'N' || c == 'a' || c == 'I' || c == 'n'
                 || c == 'f' || c == 'i' || c == 't' || c == 'y';
+    }
+
+    @Override
+    public byte[] encode(Float value) {
+        return Codec.allocate(4).putFloat(value).array();
+    }
+
+    @Override
+    public Float decodeBinary(ByteBuffer buf, int length) throws Codec.ParseException {
+        if (length != 4) {
+            throw new Codec.ParseException("Expected 4 bytes for float4, got " + length);
+        }
+        return buf.getFloat();
     }
 
 }

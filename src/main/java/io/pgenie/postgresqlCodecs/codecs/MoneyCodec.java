@@ -18,6 +18,16 @@ final class MoneyCodec implements Codec<String> {
     }
 
     @Override
+    public int oid() {
+        return 790;
+    }
+
+    @Override
+    public int arrayOid() {
+        return 791;
+    }
+
+    @Override
     public void bind(PreparedStatement ps, int index, String value) throws SQLException {
         if (value != null) {
             PGobject obj = new PGobject();

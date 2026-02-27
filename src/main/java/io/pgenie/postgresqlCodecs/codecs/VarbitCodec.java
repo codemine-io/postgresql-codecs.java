@@ -38,4 +38,41 @@ final class VarbitCodec implements Codec<String> {
         return new Codec.ParsingResult<>(input.subSequence(offset, input.length()).toString(), input.length());
     }
 
+    @Override
+    public byte[] encode(String value) {
+        int nbits = value.length();
+        int nbytes = (nbits + 7) / 8;
+        java.nio.ByteBuffer buf = Codec.allocate(4 + nbytes);
+        buf.putInt(nbits);
+        for (int i = 0; i < nbytes; i++) {
+            int b = 0;
+            for (int bit = 0; bit < 8; bit++) {
+                int pos = i * 8 + bit;
+                if (pos < nbits && value.charAt(pos) == '1') {
+                    b |= (0x80 >>> bit);
+                }
+            }
+            buf.put((byte) b);
+        }
+        return buf.array();
+    }
+
+    @Override
+    public String decodeBinary(java.nio.ByteBuffer buf, int length) throws Codec.ParseException {
+        if (length < 4) throw new Codec.ParseException("Binary bit too short: " + length);
+        int nbits = buf.getInt();
+        int nbytes = (nbits + 7) / 8;
+        if (length != 4 + nbytes) throw new Codec.ParseException("Binary bit length mismatch");
+        StringBuilder sb = new StringBuilder(nbits);
+        for (int i = 0; i < nbytes; i++) {
+            int b = Byte.toUnsignedInt(buf.get());
+            for (int bit = 0; bit < 8; bit++) {
+                if (sb.length() < nbits) {
+                    sb.append((b & (0x80 >>> bit)) != 0 ? '1' : '0');
+                }
+            }
+        }
+        return sb.toString();
+    }
+
 }

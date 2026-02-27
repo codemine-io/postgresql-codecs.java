@@ -18,6 +18,16 @@ final class IntervalCodec implements Codec<String> {
     }
 
     @Override
+    public int oid() {
+        return 1186;
+    }
+
+    @Override
+    public int arrayOid() {
+        return 1187;
+    }
+
+    @Override
     public void bind(PreparedStatement ps, int index, String value) throws SQLException {
         if (value != null) {
             PGobject obj = new PGobject();

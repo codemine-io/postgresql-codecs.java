@@ -1,5 +1,6 @@
 package io.pgenie.postgresqlCodecs.codecs;
 
+import java.nio.ByteBuffer;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.OffsetTime;
@@ -17,6 +18,16 @@ final class TimetzCodec implements Codec<OffsetTime> {
 
     public String name() {
         return "timetz";
+    }
+
+    @Override
+    public int oid() {
+        return 1266;
+    }
+
+    @Override
+    public int arrayOid() {
+        return 1270;
     }
 
     @Override
@@ -82,6 +93,28 @@ final class TimetzCodec implements Codec<OffsetTime> {
         } catch (java.time.format.DateTimeParseException e) {
             throw new Codec.ParseException(input, offset, "Invalid timetz: " + e.getMessage());
         }
+    }
+
+    @Override
+    public byte[] encode(OffsetTime value) {
+        long micros = value.toLocalTime().toNanoOfDay() / 1000L;
+        int pgTz = -value.getOffset().getTotalSeconds();
+        ByteBuffer buf = Codec.allocate(12);
+        buf.putLong(micros);
+        buf.putInt(pgTz);
+        return buf.array();
+    }
+
+    @Override
+    public OffsetTime decodeBinary(ByteBuffer buf, int length) throws Codec.ParseException {
+        if (length != 12) {
+            throw new Codec.ParseException("TimetzCodec.decodeBinary: expected 12 bytes, got " + length);
+        }
+        long micros = buf.getLong();
+        int pgTz = buf.getInt();
+        java.time.LocalTime lt = java.time.LocalTime.ofNanoOfDay(micros * 1000L);
+        java.time.ZoneOffset zo = java.time.ZoneOffset.ofTotalSeconds(-pgTz);
+        return lt.atOffset(zo);
     }
 
     private static final DateTimeFormatter PARSER = new DateTimeFormatterBuilder()

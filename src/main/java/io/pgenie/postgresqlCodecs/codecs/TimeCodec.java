@@ -1,5 +1,6 @@
 package io.pgenie.postgresqlCodecs.codecs;
 
+import java.nio.ByteBuffer;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Types;
@@ -14,6 +15,16 @@ final class TimeCodec implements Codec<LocalTime> {
 
     public String name() {
         return "time";
+    }
+
+    @Override
+    public int oid() {
+        return 1083;
+    }
+
+    @Override
+    public int arrayOid() {
+        return 1183;
     }
 
     @Override
@@ -54,6 +65,21 @@ final class TimeCodec implements Codec<LocalTime> {
         } catch (java.time.format.DateTimeParseException e) {
             throw new Codec.ParseException(input, offset, "Invalid time: " + e.getMessage());
         }
+    }
+
+    @Override
+    public byte[] encode(LocalTime value) {
+        long micros = value.toNanoOfDay() / 1000L;
+        return Codec.allocate(8).putLong(micros).array();
+    }
+
+    @Override
+    public LocalTime decodeBinary(ByteBuffer buf, int length) throws Codec.ParseException {
+        if (length != 8) {
+            throw new Codec.ParseException("TimeCodec.decodeBinary: expected 8 bytes, got " + length);
+        }
+        long micros = buf.getLong();
+        return LocalTime.ofNanoOfDay(micros * 1000L);
     }
 
 }

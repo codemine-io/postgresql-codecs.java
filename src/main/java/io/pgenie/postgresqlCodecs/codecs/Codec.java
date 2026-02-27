@@ -1,9 +1,22 @@
 package io.pgenie.postgresqlCodecs.codecs;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.sql.PreparedStatement;
 
 /**
  * A codec for a single scalar value.
+ *
+ * <p>Each codec supports two wire formats:
+ * <ul>
+ *   <li><b>Textual</b> — the PostgreSQL text representation, used via
+ *       {@link #write} and {@link #parse}.  These methods are also used when
+ *       encoding composite and array fields inside a composite/array literal.</li>
+ *   <li><b>Binary</b> — the PostgreSQL binary wire format, used via
+ *       {@link #encode} and {@link #decodeBinary}.  Binary encoding is compact,
+ *       unambiguous and required when assembling composite or array values in
+ *       binary protocol mode.</li>
+ * </ul>
  *
  * @param <A> the type of the value
  */
@@ -47,19 +60,54 @@ public interface Codec<A> {
     public static final Codec<String> VARBIT = VarbitCodec.instance;
     public static final Codec<String> TSVECTOR = TsvectorCodec.instance;
 
+    // -----------------------------------------------------------------------
+    // Type metadata
+    // -----------------------------------------------------------------------
+
+    /**
+     * Returns the PostgreSQL type name (e.g. {@code "int4"}, {@code "text"}).
+     */
     String name();
+
+    /**
+     * Returns the PostgreSQL base-type OID, or {@code 0} if not statically
+     * known (e.g. user-defined composite types).
+     *
+     * <p>The OID is used inside binary-format array and composite headers to
+     * tag each element with its type.
+     */
+    default int oid() {
+        return 0;
+    }
+
+    /**
+     * Returns the PostgreSQL array-type OID for this element type, or
+     * {@code 0} if not known.
+     */
+    default int arrayOid() {
+        return 0;
+    }
+
+    // -----------------------------------------------------------------------
+    // JDBC binding
+    // -----------------------------------------------------------------------
 
     /**
      * Binds the given value to the specified index in the prepared statement.
      */
     void bind(PreparedStatement ps, int index, A value) throws java.sql.SQLException;
 
+    // -----------------------------------------------------------------------
+    // Textual wire format
+    // -----------------------------------------------------------------------
+
     /**
-     * Writes the given value to the string builder in textual literal form.
+     * Writes the given value to the string builder in PostgreSQL textual
+     * literal form.
      *
-     * This is primarily used for encoding fields in composite types.
-     * Unfortunately, the PostgreSQL JDBC driver does not support natively
-     * encoding composite types or the binary format for them.
+     * <p>This is primarily used for encoding fields inside composite and array
+     * literals.  The written form must be the canonical text representation
+     * accepted by PostgreSQL for the type.
      */
     void write(StringBuilder sb, A value);
 
@@ -82,6 +130,65 @@ public interface Codec<A> {
      */
     ParsingResult<A> parse(CharSequence input, int offset) throws ParseException;
 
+    // -----------------------------------------------------------------------
+    // Binary wire format
+    // -----------------------------------------------------------------------
+
+    /**
+     * Encodes the given non-null value into the PostgreSQL binary wire format.
+     *
+     * <p>The returned byte array holds exactly the binary payload for the
+     * value — no length prefix.  The caller (e.g. {@link ArrayCodec} or
+     * {@link CompositeCodec}) is responsible for prepending the 4-byte
+     * {@code int32} length header required by the PostgreSQL composite and
+     * array binary protocols.
+     *
+     * <p>The byte order is always <b>big-endian</b>, as required by the
+     * PostgreSQL wire protocol.
+     *
+     * @throws UnsupportedOperationException if binary encoding is not
+     *         implemented for this type
+     */
+    default byte[] encode(A value) {
+        throw new UnsupportedOperationException("Binary encoding not implemented for type: " + name());
+    }
+
+    /**
+     * Decodes a value from the PostgreSQL binary wire format.
+     *
+     * <p>{@code buf} must be a big-endian {@link ByteBuffer} positioned at the
+     * first byte of the value's payload.  {@code length} is the number of
+     * bytes that make up the payload (as read from the preceding
+     * {@code int32} length header).  The method advances the buffer position
+     * by exactly {@code length} bytes.
+     *
+     * <p>NULL handling ({@code length == -1}) must be performed by the caller
+     * before invoking this method.
+     *
+     * @throws ParseException if the binary data is malformed
+     * @throws UnsupportedOperationException if binary decoding is not
+     *         implemented for this type
+     */
+    default A decodeBinary(ByteBuffer buf, int length) throws ParseException {
+        throw new UnsupportedOperationException("Binary decoding not implemented for type: " + name());
+    }
+
+    // -----------------------------------------------------------------------
+    // Helpers
+    // -----------------------------------------------------------------------
+
+    /**
+     * Allocates a big-endian {@link ByteBuffer} of the given capacity.
+     * Convenience method for codec implementations.
+     */
+    static ByteBuffer allocate(int capacity) {
+        return ByteBuffer.allocate(capacity).order(ByteOrder.BIG_ENDIAN);
+    }
+
+    // -----------------------------------------------------------------------
+    // Result / exception types
+    // -----------------------------------------------------------------------
+
     final class ParsingResult<A> {
 
         public final A value;
@@ -102,6 +209,10 @@ public interface Codec<A> {
 
         public ParseException(CharSequence input, String message) {
             super(String.format("Parse error: %s (input: \"%s\")", message, input));
+        }
+
+        public ParseException(String message) {
+            super(message);
         }
 
     }

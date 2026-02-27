@@ -1,5 +1,6 @@
 package io.pgenie.postgresqlCodecs.codecs;
 
+import java.nio.ByteBuffer;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Types;
@@ -13,6 +14,16 @@ final class ByteaCodec implements Codec<byte[]> {
 
     public String name() {
         return "bytea";
+    }
+
+    @Override
+    public int oid() {
+        return 17;
+    }
+
+    @Override
+    public int arrayOid() {
+        return 1001;
     }
 
     @Override
@@ -71,6 +82,18 @@ final class ByteaCodec implements Codec<byte[]> {
 
     private static boolean isHexDigit(char c) {
         return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+    }
+
+    @Override
+    public byte[] encode(byte[] value) {
+        return value;
+    }
+
+    @Override
+    public byte[] decodeBinary(ByteBuffer buf, int length) throws Codec.ParseException {
+        byte[] b = new byte[length];
+        buf.get(b);
+        return b;
     }
 
 }

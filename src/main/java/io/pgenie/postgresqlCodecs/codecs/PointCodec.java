@@ -18,6 +18,16 @@ final class PointCodec implements Codec<PGpoint> {
     }
 
     @Override
+    public int oid() {
+        return 600;
+    }
+
+    @Override
+    public int arrayOid() {
+        return 1017;
+    }
+
+    @Override
     public void bind(PreparedStatement ps, int index, PGpoint value) throws SQLException {
         if (value != null) {
             ps.setObject(index, value);
@@ -56,6 +66,22 @@ final class PointCodec implements Codec<PGpoint> {
         } catch (java.sql.SQLException e) {
             throw new Codec.ParseException(input, offset, "Invalid point: " + e.getMessage());
         }
+    }
+
+    @Override
+    public byte[] encode(PGpoint value) {
+        java.nio.ByteBuffer buf = Codec.allocate(16);
+        buf.putDouble(value.x);
+        buf.putDouble(value.y);
+        return buf.array();
+    }
+
+    @Override
+    public PGpoint decodeBinary(java.nio.ByteBuffer buf, int length) throws Codec.ParseException {
+        if (length != 16) throw new Codec.ParseException("Binary point must be 16 bytes, got " + length);
+        double x = buf.getDouble();
+        double y = buf.getDouble();
+        return new PGpoint(x, y);
     }
 
 }

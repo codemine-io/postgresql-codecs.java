@@ -1,5 +1,6 @@
 package io.pgenie.postgresqlCodecs.codecs;
 
+import java.nio.ByteBuffer;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Types;
@@ -14,6 +15,16 @@ final class UuidCodec implements Codec<UUID> {
 
     public String name() {
         return "uuid";
+    }
+
+    @Override
+    public int oid() {
+        return 2950;
+    }
+
+    @Override
+    public int arrayOid() {
+        return 2951;
     }
 
     @Override
@@ -42,6 +53,24 @@ final class UuidCodec implements Codec<UUID> {
         } catch (IllegalArgumentException e) {
             throw new Codec.ParseException(input, offset, "Invalid UUID: " + token);
         }
+    }
+
+    @Override
+    public byte[] encode(UUID value) {
+        ByteBuffer buf = Codec.allocate(16);
+        buf.putLong(value.getMostSignificantBits());
+        buf.putLong(value.getLeastSignificantBits());
+        return buf.array();
+    }
+
+    @Override
+    public UUID decodeBinary(ByteBuffer buf, int length) throws Codec.ParseException {
+        if (length != 16) {
+            throw new Codec.ParseException("UuidCodec.decodeBinary: expected 16 bytes, got " + length);
+        }
+        long msb = buf.getLong();
+        long lsb = buf.getLong();
+        return new UUID(msb, lsb);
     }
 
 }

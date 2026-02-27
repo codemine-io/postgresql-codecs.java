@@ -1,5 +1,6 @@
 package io.pgenie.postgresqlCodecs.codecs;
 
+import java.nio.ByteBuffer;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -15,6 +16,16 @@ final class DateCodec implements Codec<LocalDate> {
 
     public String name() {
         return "date";
+    }
+
+    @Override
+    public int oid() {
+        return 1082;
+    }
+
+    @Override
+    public int arrayOid() {
+        return 1182;
     }
 
     @Override
@@ -43,6 +54,21 @@ final class DateCodec implements Codec<LocalDate> {
         } catch (java.time.format.DateTimeParseException e) {
             throw new Codec.ParseException(input, offset, e.getMessage());
         }
+    }
+
+    @Override
+    public byte[] encode(LocalDate value) {
+        long pgDay = value.toEpochDay() - 10957L;
+        return Codec.allocate(4).putInt((int) pgDay).array();
+    }
+
+    @Override
+    public LocalDate decodeBinary(ByteBuffer buf, int length) throws Codec.ParseException {
+        if (length != 4) {
+            throw new Codec.ParseException("DateCodec.decodeBinary: expected 4 bytes, got " + length);
+        }
+        int pgDay = buf.getInt();
+        return LocalDate.ofEpochDay(pgDay + 10957L);
     }
 
 }

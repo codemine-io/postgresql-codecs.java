@@ -1,5 +1,6 @@
 package io.pgenie.postgresqlCodecs.codecs;
 
+import java.nio.ByteBuffer;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.function.Function;
@@ -21,6 +22,16 @@ public final class MappedCodec<A, B> implements Codec<B> {
     }
 
     @Override
+    public int oid() {
+        return codec.oid();
+    }
+
+    @Override
+    public int arrayOid() {
+        return codec.arrayOid();
+    }
+
+    @Override
     public void bind(PreparedStatement ps, int index, B value) throws SQLException {
         codec.bind(ps, index, fromMapped.apply(value));
     }
@@ -33,6 +44,16 @@ public final class MappedCodec<A, B> implements Codec<B> {
     public Codec.ParsingResult<B> parse(CharSequence input, int offset) throws Codec.ParseException {
         var result = codec.parse(input, offset);
         return new Codec.ParsingResult<>(toMapped.apply(result.value), result.nextOffset);
+    }
+
+    @Override
+    public byte[] encode(B value) {
+        return codec.encode(fromMapped.apply(value));
+    }
+
+    @Override
+    public B decodeBinary(ByteBuffer buf, int length) throws Codec.ParseException {
+        return toMapped.apply(codec.decodeBinary(buf, length));
     }
 
 }

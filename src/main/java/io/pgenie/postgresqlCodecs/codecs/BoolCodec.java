@@ -1,5 +1,6 @@
 package io.pgenie.postgresqlCodecs.codecs;
 
+import java.nio.ByteBuffer;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Types;
@@ -13,6 +14,16 @@ final class BoolCodec implements Codec<Boolean> {
 
     public String name() {
         return "bool";
+    }
+
+    @Override
+    public int oid() {
+        return 16;
+    }
+
+    @Override
+    public int arrayOid() {
+        return 1000;
     }
 
     @Override
@@ -57,6 +68,19 @@ final class BoolCodec implements Codec<Boolean> {
             return new Codec.ParsingResult<>(false, offset + 1);
         }
         throw new Codec.ParseException(input, offset, "Expected bool value");
+    }
+
+    @Override
+    public byte[] encode(Boolean value) {
+        return new byte[]{value ? (byte) 1 : (byte) 0};
+    }
+
+    @Override
+    public Boolean decodeBinary(ByteBuffer buf, int length) throws Codec.ParseException {
+        if (length != 1) {
+            throw new Codec.ParseException("Expected 1 byte for bool, got " + length);
+        }
+        return buf.get() != 0;
     }
 
 }

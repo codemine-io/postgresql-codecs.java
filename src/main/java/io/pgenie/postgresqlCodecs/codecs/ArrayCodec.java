@@ -1,5 +1,6 @@
 package io.pgenie.postgresqlCodecs.codecs;
 
+import java.nio.ByteBuffer;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -10,9 +11,20 @@ import org.postgresql.util.PGobject;
 /**
  * Codec for PostgreSQL array types.
  *
- * <p>Renders arrays in the textual format {@code {elem1,elem2,...}} with proper
- * quoting and escaping. Parses the same format back, handling quoted elements,
- * NULL, and nested arrays/composites.
+ * <p>Supports both the textual format {@code {elem1,elem2,...}} and the
+ * PostgreSQL binary array wire format.
+ *
+ * <p><b>Binary format</b> (1-D arrays):
+ * <pre>
+ * int32  ndims        = 1
+ * int32  has_nulls    = 0 or 1
+ * int32  element_oid
+ * int32  dim_size     (number of elements)
+ * int32  lower_bound  = 1
+ * [for each element]:
+ *   int32  length     (-1 for NULL)
+ *   byte[] data
+ * </pre>
  *
  * @param <A> the element type
  */
@@ -35,6 +47,15 @@ public final class ArrayCodec<A> implements Codec<List<A>> {
     @Override
     public String name() {
         return pgTypeName;
+    }
+
+    /**
+     * Returns the array OID for this array type (= the element codec's
+     * {@code arrayOid()}).
+     */
+    @Override
+    public int oid() {
+        return elementCodec.arrayOid();
     }
 
     @Override
@@ -173,6 +194,98 @@ public final class ArrayCodec<A> implements Codec<List<A>> {
             }
         }
         throw new Codec.ParseException(input, offset, "Expected '}' to close array");
+    }
+
+    // -----------------------------------------------------------------------
+    // Binary wire format
+    // -----------------------------------------------------------------------
+
+    /**
+     * Encodes a 1-D list as a PostgreSQL binary-format array.
+     *
+     * <p>Binary layout:
+     * <pre>
+     * int32  ndims       = 1
+     * int32  has_nulls   = 0 or 1
+     * int32  element_oid
+     * int32  dim_size
+     * int32  lower_bound = 1
+     * [for each element]:
+     *   int32  length    (-1 for NULL)
+     *   byte[] data
+     * </pre>
+     */
+    @Override
+    public byte[] encode(List<A> value) {
+        int elemOid = elementCodec.oid();
+        boolean hasNulls = value.stream().anyMatch(e -> e == null);
+
+        // Pre-encode each element so we know sizes
+        byte[][] encodedElems = new byte[value.size()][];
+        for (int i = 0; i < value.size(); i++) {
+            A elem = value.get(i);
+            encodedElems[i] = (elem != null) ? elementCodec.encode(elem) : null;
+        }
+
+        // Compute total size
+        int bodySize = 0;
+        for (byte[] ee : encodedElems) {
+            bodySize += 4; // length prefix
+            if (ee != null) bodySize += ee.length;
+        }
+
+        // Header: ndims(4) + has_nulls(4) + oid(4) + dim_size(4) + lower_bound(4) = 20 bytes
+        ByteBuffer buf = Codec.allocate(20 + bodySize);
+        buf.putInt(1);                      // ndims
+        buf.putInt(hasNulls ? 1 : 0);       // has_nulls
+        buf.putInt(elemOid);                // element OID
+        buf.putInt(value.size());           // dimension size
+        buf.putInt(1);                      // lower bound
+
+        for (byte[] ee : encodedElems) {
+            if (ee == null) {
+                buf.putInt(-1);             // NULL sentinel
+            } else {
+                buf.putInt(ee.length);
+                buf.put(ee);
+            }
+        }
+        return buf.array();
+    }
+
+    /**
+     * Decodes a PostgreSQL binary-format 1-D array.
+     */
+    @Override
+    public List<A> decodeBinary(ByteBuffer buf, int length) throws Codec.ParseException {
+        if (length < 12) {
+            throw new Codec.ParseException("Binary array too short: " + length);
+        }
+        int ndims = buf.getInt();
+        int hasNulls = buf.getInt(); // ignored — presence of -1 lengths handles nulls
+        int elemOidInData = buf.getInt(); // element OID from the data (informational)
+
+        if (ndims == 0) {
+            // Empty array with no dimensions written
+            return new ArrayList<>();
+        }
+        if (ndims != 1) {
+            throw new Codec.ParseException("Only 1-D binary arrays are supported, got ndims=" + ndims);
+        }
+
+        int dimSize = buf.getInt();
+        int lowerBound = buf.getInt(); // usually 1, ignored
+
+        List<A> result = new ArrayList<>(dimSize);
+        for (int i = 0; i < dimSize; i++) {
+            int elemLen = buf.getInt();
+            if (elemLen == -1) {
+                result.add(null);
+            } else {
+                result.add(elementCodec.decodeBinary(buf, elemLen));
+            }
+        }
+        return result;
     }
 
     // -----------------------------------------------------------------------

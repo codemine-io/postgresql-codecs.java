@@ -18,6 +18,16 @@ final class LsegCodec implements Codec<PGlseg> {
     }
 
     @Override
+    public int oid() {
+        return 601;
+    }
+
+    @Override
+    public int arrayOid() {
+        return 1018;
+    }
+
+    @Override
     public void bind(PreparedStatement ps, int index, PGlseg value) throws SQLException {
         if (value != null) {
             ps.setObject(index, value);
@@ -53,6 +63,26 @@ final class LsegCodec implements Codec<PGlseg> {
         } catch (java.sql.SQLException e) {
             throw new Codec.ParseException(input, offset, "Invalid lseg: " + e.getMessage());
         }
+    }
+
+    @Override
+    public byte[] encode(PGlseg value) {
+        java.nio.ByteBuffer buf = Codec.allocate(32);
+        buf.putDouble(value.point[0].x);
+        buf.putDouble(value.point[0].y);
+        buf.putDouble(value.point[1].x);
+        buf.putDouble(value.point[1].y);
+        return buf.array();
+    }
+
+    @Override
+    public PGlseg decodeBinary(java.nio.ByteBuffer buf, int length) throws Codec.ParseException {
+        if (length != 32) throw new Codec.ParseException("Binary lseg must be 32 bytes, got " + length);
+        double x1 = buf.getDouble();
+        double y1 = buf.getDouble();
+        double x2 = buf.getDouble();
+        double y2 = buf.getDouble();
+        return new PGlseg(x1, y1, x2, y2);
     }
 
 }

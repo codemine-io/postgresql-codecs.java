@@ -18,6 +18,16 @@ final class TsvectorCodec implements Codec<String> {
     }
 
     @Override
+    public int oid() {
+        return 3614;
+    }
+
+    @Override
+    public int arrayOid() {
+        return 3643;
+    }
+
+    @Override
     public void bind(PreparedStatement ps, int index, String value) throws SQLException {
         if (value != null) {
             PGobject obj = new PGobject();

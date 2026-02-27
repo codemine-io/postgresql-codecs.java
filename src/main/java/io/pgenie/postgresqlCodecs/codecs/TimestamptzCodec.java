@@ -1,9 +1,12 @@
 package io.pgenie.postgresqlCodecs.codecs;
 
+import java.nio.ByteBuffer;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 
@@ -11,11 +14,23 @@ final class TimestamptzCodec implements Codec<OffsetDateTime> {
 
     static final TimestamptzCodec instance = new TimestamptzCodec();
 
+    private static final long PG_EPOCH_MICROS = 946684800_000_000L;
+
     private TimestamptzCodec() {
     }
 
     public String name() {
         return "timestamptz";
+    }
+
+    @Override
+    public int oid() {
+        return 1184;
+    }
+
+    @Override
+    public int arrayOid() {
+        return 1185;
     }
 
     @Override
@@ -83,6 +98,32 @@ final class TimestamptzCodec implements Codec<OffsetDateTime> {
         } catch (java.time.format.DateTimeParseException e) {
             throw new Codec.ParseException(input, offset, "Invalid timestamptz: " + e.getMessage());
         }
+    }
+
+    @Override
+    public byte[] encode(OffsetDateTime value) {
+        OffsetDateTime utc = value.withOffsetSameInstant(ZoneOffset.UTC);
+        long epochSecond = utc.toEpochSecond();
+        int nanos = utc.getNano();
+        long micros = epochSecond * 1_000_000L + nanos / 1000L - PG_EPOCH_MICROS;
+        return Codec.allocate(8).putLong(micros).array();
+    }
+
+    @Override
+    public OffsetDateTime decodeBinary(ByteBuffer buf, int length) throws Codec.ParseException {
+        if (length != 8) {
+            throw new Codec.ParseException("TimestamptzCodec.decodeBinary: expected 8 bytes, got " + length);
+        }
+        long pgMicros = buf.getLong();
+        long epochMicros = pgMicros + PG_EPOCH_MICROS;
+        long epochSecond = epochMicros / 1_000_000L;
+        int nanos = (int) (epochMicros % 1_000_000L) * 1000;
+        if (nanos < 0) {
+            epochSecond--;
+            nanos += 1_000_000_000;
+        }
+        Instant instant = Instant.ofEpochSecond(epochSecond, nanos);
+        return instant.atOffset(ZoneOffset.UTC);
     }
 
     private static final DateTimeFormatter PARSER = new DateTimeFormatterBuilder()

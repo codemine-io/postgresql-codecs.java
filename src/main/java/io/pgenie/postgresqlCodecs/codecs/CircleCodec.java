@@ -18,6 +18,16 @@ final class CircleCodec implements Codec<PGcircle> {
     }
 
     @Override
+    public int oid() {
+        return 718;
+    }
+
+    @Override
+    public int arrayOid() {
+        return 719;
+    }
+
+    @Override
     public void bind(PreparedStatement ps, int index, PGcircle value) throws SQLException {
         if (value != null) {
             ps.setObject(index, value);
@@ -54,6 +64,25 @@ final class CircleCodec implements Codec<PGcircle> {
         } catch (java.sql.SQLException e) {
             throw new Codec.ParseException(input, offset, "Invalid circle: " + e.getMessage());
         }
+    }
+
+    @Override
+    public byte[] encode(PGcircle value) {
+        java.nio.ByteBuffer buf = Codec.allocate(24);
+        buf.putDouble(value.center.x);
+        buf.putDouble(value.center.y);
+        buf.putDouble(value.radius);
+        return buf.array();
+    }
+
+    @Override
+    public PGcircle decodeBinary(java.nio.ByteBuffer buf, int length) throws Codec.ParseException {
+        if (length != 24) throw new Codec.ParseException("Binary circle must be 24 bytes, got " + length);
+        double cx = buf.getDouble();
+        double cy = buf.getDouble();
+        double r = buf.getDouble();
+        org.postgresql.geometric.PGpoint center = new org.postgresql.geometric.PGpoint(cx, cy);
+        return new PGcircle(center, r);
     }
 
 }

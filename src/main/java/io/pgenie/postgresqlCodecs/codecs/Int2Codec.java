@@ -1,5 +1,6 @@
 package io.pgenie.postgresqlCodecs.codecs;
 
+import java.nio.ByteBuffer;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Types;
@@ -13,6 +14,16 @@ final class Int2Codec implements Codec<Short> {
 
     public String name() {
         return "int2";
+    }
+
+    @Override
+    public int oid() {
+        return 21;
+    }
+
+    @Override
+    public int arrayOid() {
+        return 1005;
     }
 
     @Override
@@ -47,6 +58,19 @@ final class Int2Codec implements Codec<Short> {
             value = value * 10 + (input.charAt(i++) - '0');
         }
         return new Codec.ParsingResult<>((short) (negative ? -value : value), i);
+    }
+
+    @Override
+    public byte[] encode(Short value) {
+        return Codec.allocate(2).putShort(value).array();
+    }
+
+    @Override
+    public Short decodeBinary(ByteBuffer buf, int length) throws Codec.ParseException {
+        if (length != 2) {
+            throw new Codec.ParseException("Expected 2 bytes for int2, got " + length);
+        }
+        return buf.getShort();
     }
 
 }

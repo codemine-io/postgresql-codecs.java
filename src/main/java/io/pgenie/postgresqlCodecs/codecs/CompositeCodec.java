@@ -1,11 +1,29 @@
 package io.pgenie.postgresqlCodecs.codecs;
 
+import java.nio.ByteBuffer;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.function.Function;
 
 import org.postgresql.util.PGobject;
 
+/**
+ * Codec for PostgreSQL composite (row) types.
+ *
+ * <p>Supports both the PostgreSQL text literal format {@code (val1,val2,...)}
+ * and the binary composite wire format.
+ *
+ * <p><b>Binary format</b>:
+ * <pre>
+ * int32  field_count
+ * [for each field]:
+ *   int32  field_oid    (OID of the field; 0 for unknown/user-defined)
+ *   int32  field_length (-1 for NULL)
+ *   byte[] field_data   (only present when field_length != -1)
+ * </pre>
+ *
+ * @param <Z> the composite type
+ */
 public final class CompositeCodec<Z> implements Codec<Z> {
 
     private final String schema;
@@ -154,6 +172,90 @@ public final class CompositeCodec<Z> implements Codec<Z> {
         }
         return new Codec.ParsingResult<>((Z) fn, i + 1);
     }
+
+    // -----------------------------------------------------------------------
+    // Binary wire format
+    // -----------------------------------------------------------------------
+
+    /**
+     * Encodes the composite value in the PostgreSQL binary composite format.
+     *
+     * <p>Layout:
+     * <pre>
+     * int32  field_count
+     * [for each field]:
+     *   int32  field_oid    (0 for unknown OIDs)
+     *   int32  field_length (-1 for NULL)
+     *   byte[] field_data
+     * </pre>
+     */
+    @Override
+    @SuppressWarnings("unchecked")
+    public byte[] encode(Z value) {
+        // Pre-encode all fields
+        byte[][] encodedFields = new byte[fields.length][];
+        for (int i = 0; i < fields.length; i++) {
+            var field = (Field<Z, Object>) fields[i];
+            Object fieldValue = field.accessor.apply(value);
+            encodedFields[i] = (fieldValue != null) ? field.codec.encode(fieldValue) : null;
+        }
+
+        // Compute total buffer size: 4 (field_count) + fields × (4 oid + 4 length + data)
+        int totalSize = 4;
+        for (byte[] ef : encodedFields) {
+            totalSize += 4 + 4; // oid + length
+            if (ef != null) totalSize += ef.length;
+        }
+
+        ByteBuffer buf = Codec.allocate(totalSize);
+        buf.putInt(fields.length);
+
+        for (int i = 0; i < fields.length; i++) {
+            var field = (Field<Z, Object>) fields[i];
+            buf.putInt(field.codec.oid()); // field OID (0 if unknown)
+            byte[] ef = encodedFields[i];
+            if (ef == null) {
+                buf.putInt(-1);             // NULL
+            } else {
+                buf.putInt(ef.length);
+                buf.put(ef);
+            }
+        }
+        return buf.array();
+    }
+
+    /**
+     * Decodes a composite value from the PostgreSQL binary composite format.
+     */
+    @Override
+    @SuppressWarnings("unchecked")
+    public Z decodeBinary(ByteBuffer buf, int length) throws Codec.ParseException {
+        if (length < 4) {
+            throw new Codec.ParseException("Binary composite too short: " + length);
+        }
+        int fieldCount = buf.getInt();
+        if (fieldCount != fields.length) {
+            throw new Codec.ParseException(
+                "Binary composite field count mismatch: expected " + fields.length + ", got " + fieldCount);
+        }
+
+        Object fn = constructor;
+        for (int i = 0; i < fields.length; i++) {
+            int fieldOid = buf.getInt(); // OID — informational, not validated
+            int fieldLen = buf.getInt();
+            if (fieldLen == -1) {
+                fn = ((Function<Object, Object>) fn).apply(null);
+            } else {
+                Object fieldValue = ((Codec<Object>) fields[i].codec).decodeBinary(buf, fieldLen);
+                fn = ((Function<Object, Object>) fn).apply(fieldValue);
+            }
+        }
+        return (Z) fn;
+    }
+
+    // -----------------------------------------------------------------------
+    // row(...) helper
+    // -----------------------------------------------------------------------
 
     /**
      * Writes the value in {@code row(...)} syntax, which handles nested

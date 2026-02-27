@@ -18,6 +18,16 @@ final class PolygonCodec implements Codec<PGpolygon> {
     }
 
     @Override
+    public int oid() {
+        return 604;
+    }
+
+    @Override
+    public int arrayOid() {
+        return 1027;
+    }
+
+    @Override
     public void bind(PreparedStatement ps, int index, PGpolygon value) throws SQLException {
         if (value != null) {
             ps.setObject(index, value);
@@ -55,6 +65,32 @@ final class PolygonCodec implements Codec<PGpolygon> {
         } catch (java.sql.SQLException e) {
             throw new Codec.ParseException(input, offset, "Invalid polygon: " + e.getMessage());
         }
+    }
+
+    @Override
+    public byte[] encode(PGpolygon value) {
+        int n = value.points.length;
+        java.nio.ByteBuffer buf = Codec.allocate(4 + n * 16);
+        buf.putInt(n);
+        for (org.postgresql.geometric.PGpoint p : value.points) {
+            buf.putDouble(p.x);
+            buf.putDouble(p.y);
+        }
+        return buf.array();
+    }
+
+    @Override
+    public PGpolygon decodeBinary(java.nio.ByteBuffer buf, int length) throws Codec.ParseException {
+        if (length < 4) throw new Codec.ParseException("Binary polygon too short: " + length);
+        int npts = buf.getInt();
+        if (length != 4 + npts * 16) throw new Codec.ParseException("Binary polygon length mismatch");
+        org.postgresql.geometric.PGpoint[] points = new org.postgresql.geometric.PGpoint[npts];
+        for (int i = 0; i < npts; i++) {
+            double x = buf.getDouble();
+            double y = buf.getDouble();
+            points[i] = new org.postgresql.geometric.PGpoint(x, y);
+        }
+        return new PGpolygon(points);
     }
 
 }

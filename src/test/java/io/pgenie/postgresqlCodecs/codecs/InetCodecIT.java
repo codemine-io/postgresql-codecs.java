@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class InetCodecIT extends CodecITBase {
 
@@ -47,6 +49,18 @@ public class InetCodecIT extends CodecITBase {
     void inetIpv6Binary() throws Exception {
         assertBinaryRoundTrip(Codec.INET, "inet", "::1/128");
         assertBinaryRoundTrip(Codec.INET, "inet", "2001:db8::/32");
+    }
+
+    /**
+     * Property: arbitrary IPv4 inet values round-trip through the binary codec.
+     *
+     * <p>IPv4-only because the binary decoder emits the canonical compressed form
+     * for IPv6, which may differ lexically from the generator's expanded form.
+     */
+    @ParameterizedTest
+    @MethodSource("io.pgenie.postgresqlCodecs.codecs.Generators#inetIpv4s")
+    void inetPropertyBinaryRoundTrip(String value) throws Exception {
+        assertBinaryRoundTrip(Codec.INET, "inet", value);
     }
 
 }

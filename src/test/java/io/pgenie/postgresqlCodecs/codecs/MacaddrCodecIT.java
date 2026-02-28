@@ -3,6 +3,8 @@ package io.pgenie.postgresqlCodecs.codecs;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class MacaddrCodecIT extends CodecITBase {
 
@@ -26,6 +28,18 @@ public class MacaddrCodecIT extends CodecITBase {
     void macaddrBinary() throws Exception {
         assertBinaryRoundTrip(Codec.MACADDR, "macaddr", "08:00:2b:01:02:03");
         assertBinaryRoundTrip(Codec.MACADDR, "macaddr", "ff:ff:ff:ff:ff:ff");
+    }
+
+    @ParameterizedTest
+    @MethodSource("io.pgenie.postgresqlCodecs.codecs.Generators#macaddrs")
+    void macaddrPropertyRoundTrip(String value) throws Exception {
+        assertEquals(value, roundTrip(Codec.MACADDR, value));
+    }
+
+    @ParameterizedTest
+    @MethodSource("io.pgenie.postgresqlCodecs.codecs.Generators#macaddrs")
+    void macaddrPropertyBinaryRoundTrip(String value) throws Exception {
+        assertBinaryRoundTrip(Codec.MACADDR, "macaddr", value);
     }
 
 }

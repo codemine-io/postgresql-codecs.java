@@ -1,5 +1,6 @@
 package io.pgenie.postgresqlcodecs.codecs;
 
+import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
@@ -45,7 +46,7 @@ public final class EnumCodec<E> implements Codec<E> {
     }
 
     @Override
-    public byte[] encode(E value) {
+    public void encode(E value, ByteArrayOutputStream out) {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'encode'");
     }

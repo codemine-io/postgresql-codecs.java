@@ -1,7 +1,7 @@
 package io.pgenie.postgresqlcodecs.types;
 
+import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.Random;
 
 import io.pgenie.postgresqlcodecs.codecs.Codec;
@@ -90,30 +90,41 @@ public sealed interface Inet permits Inet.V4, Inet.V6 {
         }
 
         @Override
-        public byte[] encode(Inet value) {
-            return switch (value) {
+        public void encode(Inet value, ByteArrayOutputStream out) {
+            switch (value) {
                 case Inet.V4(int addr, byte netmask) -> {
-                    ByteBuffer buf = ByteBuffer.allocate(8).order(ByteOrder.BIG_ENDIAN);
-                    buf.put((byte) 2);        // IPv4 address family
-                    buf.put(netmask);
-                    buf.put((byte) 0);        // is_cidr = 0 for inet
-                    buf.put((byte) 4);        // address length
-                    buf.putInt(addr);
-                    yield buf.array();
+                    out.write(2);         // IPv4 address family
+                    out.write(netmask);
+                    out.write(0);         // is_cidr = 0 for inet
+                    out.write(4);         // address length
+                    out.write((addr >>> 24) & 0xFF);
+                    out.write((addr >>> 16) & 0xFF);
+                    out.write((addr >>> 8) & 0xFF);
+                    out.write(addr & 0xFF);
                 }
                 case Inet.V6(int w1, int w2, int w3, int w4, byte netmask) -> {
-                    ByteBuffer buf = ByteBuffer.allocate(20).order(ByteOrder.BIG_ENDIAN);
-                    buf.put((byte) 3);        // IPv6 address family for INET
-                    buf.put(netmask);
-                    buf.put((byte) 0);        // is_cidr = 0 for inet
-                    buf.put((byte) 16);       // address length
-                    buf.putInt(w1);
-                    buf.putInt(w2);
-                    buf.putInt(w3);
-                    buf.putInt(w4);
-                    yield buf.array();
+                    out.write(3);         // IPv6 address family for INET
+                    out.write(netmask);
+                    out.write(0);         // is_cidr = 0 for inet
+                    out.write(16);        // address length
+                    out.write((w1 >>> 24) & 0xFF);
+                    out.write((w1 >>> 16) & 0xFF);
+                    out.write((w1 >>> 8) & 0xFF);
+                    out.write(w1 & 0xFF);
+                    out.write((w2 >>> 24) & 0xFF);
+                    out.write((w2 >>> 16) & 0xFF);
+                    out.write((w2 >>> 8) & 0xFF);
+                    out.write(w2 & 0xFF);
+                    out.write((w3 >>> 24) & 0xFF);
+                    out.write((w3 >>> 16) & 0xFF);
+                    out.write((w3 >>> 8) & 0xFF);
+                    out.write(w3 & 0xFF);
+                    out.write((w4 >>> 24) & 0xFF);
+                    out.write((w4 >>> 16) & 0xFF);
+                    out.write((w4 >>> 8) & 0xFF);
+                    out.write(w4 & 0xFF);
                 }
-            };
+            }
         }
 
         @Override

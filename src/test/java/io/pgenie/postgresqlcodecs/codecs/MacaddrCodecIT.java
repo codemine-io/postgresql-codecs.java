@@ -19,36 +19,36 @@ public class MacaddrCodecIT extends CodecITBase {
 
     @Test
     void macaddrRoundTrip() throws Exception {
-        assertEquals(MAC_08002B010203, roundTrip(Codec.MACADDR, MAC_08002B010203));
+        assertEquals(MAC_08002B010203, roundTrip(Macaddr.CODEC, MAC_08002B010203));
     }
 
     @Test
     void macaddrNull() throws Exception {
-        assertNull(roundTrip(Codec.MACADDR, null));
+        assertNull(roundTrip(Macaddr.CODEC, null));
     }
 
     @Test
     void macaddrOid() throws Exception {
-        assertOid(Codec.MACADDR);
+        assertOid(Macaddr.CODEC);
     }
 
     @Test
     void macaddrBinary() throws Exception {
-        assertBinaryRoundTrip(Codec.MACADDR, "macaddr", MAC_08002B010203);
-        assertBinaryRoundTrip(Codec.MACADDR, "macaddr",
+        assertBinaryRoundTrip(Macaddr.CODEC, "macaddr", MAC_08002B010203);
+        assertBinaryRoundTrip(Macaddr.CODEC, "macaddr",
                 new Macaddr((byte)0xff, (byte)0xff, (byte)0xff, (byte)0xff, (byte)0xff, (byte)0xff));
     }
 
     @ParameterizedTest
     @MethodSource("factory")
     void macaddrPropertyRoundTrip(Macaddr value) throws Exception {
-        assertEquals(value, roundTrip(Codec.MACADDR, value));
+        assertEquals(value, roundTrip(Macaddr.CODEC, value));
     }
 
     @ParameterizedTest
     @MethodSource("factory")
     void macaddrPropertyBinaryRoundTrip(Macaddr value) throws Exception {
-        assertBinaryRoundTrip(Codec.MACADDR, "macaddr", value);
+        assertBinaryRoundTrip(Macaddr.CODEC, "macaddr", value);
     }
 
     static Stream<Arguments> factory() { return Arbitrary.samples(Arbitrary.MACADDR); }

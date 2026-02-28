@@ -3,9 +3,6 @@ package io.pgenie.postgresqlcodecs.codecs;
 import java.nio.ByteBuffer;
 import java.sql.PreparedStatement;
 
-import io.pgenie.postgresqlcodecs.types.Inet;
-import io.pgenie.postgresqlcodecs.types.Macaddr;
-
 /**
  * A codec for a single scalar value.
  *
@@ -24,10 +21,6 @@ import io.pgenie.postgresqlcodecs.types.Macaddr;
  * @param <A> the type of the value
  */
 public interface Codec<A> {
-
-    // Codecs named by their PostgreSQL type name.
-    public static final Codec<Inet> INET = InetCodec.instance;
-    public static final Codec<Macaddr> MACADDR = MacaddrCodec.instance;
 
     // -----------------------------------------------------------------------
     // Type metadata

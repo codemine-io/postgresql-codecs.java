@@ -32,52 +32,52 @@ public class InetCodecIT extends CodecITBase {
 
     @Test
     void inetIPv4() throws Exception {
-        assertEquals(INET_IPV4_HOST, roundTrip(Codec.INET, INET_IPV4_HOST));
+        assertEquals(INET_IPV4_HOST, roundTrip(Inet.CODEC, INET_IPV4_HOST));
     }
 
     @Test
     void inetIPv4Subnet() throws Exception {
-        assertEquals(INET_IPV4_SUBNET, roundTrip(Codec.INET, INET_IPV4_SUBNET));
+        assertEquals(INET_IPV4_SUBNET, roundTrip(Inet.CODEC, INET_IPV4_SUBNET));
     }
 
     @Test
     void inetIPv6() throws Exception {
-        assertEquals(INET_IPV6_LOOPBACK, roundTrip(Codec.INET, INET_IPV6_LOOPBACK));
+        assertEquals(INET_IPV6_LOOPBACK, roundTrip(Inet.CODEC, INET_IPV6_LOOPBACK));
     }
 
     @Test
     void inetNull() throws Exception {
-        assertNull(roundTrip(Codec.INET, null));
+        assertNull(roundTrip(Inet.CODEC, null));
     }
 
     @Test
     void inetOid() throws Exception {
-        assertOid(Codec.INET);
+        assertOid(Inet.CODEC);
     }
 
     @Test
     void inetIpv4Binary() throws Exception {
-        assertBinaryRoundTrip(Codec.INET, "inet", INET_IPV4_HOST);
-        assertBinaryRoundTrip(Codec.INET, "inet", INET_IPV4_SUBNET);
-        assertBinaryRoundTrip(Codec.INET, "inet", new Inet.V4(0, (byte) 0));
+        assertBinaryRoundTrip(Inet.CODEC, "inet", INET_IPV4_HOST);
+        assertBinaryRoundTrip(Inet.CODEC, "inet", INET_IPV4_SUBNET);
+        assertBinaryRoundTrip(Inet.CODEC, "inet", new Inet.V4(0, (byte) 0));
     }
 
     @Test
     void inetIpv6Binary() throws Exception {
-        assertBinaryRoundTrip(Codec.INET, "inet", INET_IPV6_LOOPBACK);
-        assertBinaryRoundTrip(Codec.INET, "inet", INET_IPV6_DOC);
+        assertBinaryRoundTrip(Inet.CODEC, "inet", INET_IPV6_LOOPBACK);
+        assertBinaryRoundTrip(Inet.CODEC, "inet", INET_IPV6_DOC);
     }
 
     @ParameterizedTest
     @MethodSource("factory")
     void inetPropertyRoundTrip(Inet value) throws Exception {
-        assertEquals(value, roundTrip(Codec.INET, value));
+        assertEquals(value, roundTrip(Inet.CODEC, value));
     }
 
     @ParameterizedTest
     @MethodSource("factory")
     void inetPropertyBinaryRoundTrip(Inet value) throws Exception {
-        assertBinaryRoundTrip(Codec.INET, "inet", value);
+        assertBinaryRoundTrip(Inet.CODEC, "inet", value);
     }
 
     static Stream<Arguments> factory() { return Arbitrary.samples(Arbitrary.INET); }

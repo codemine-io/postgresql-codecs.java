@@ -95,11 +95,11 @@ abstract class CodecITBase {
      * <p>
      * This avoids any {@code *send()} SQL functions in the query text.
      */
-    <A> byte[] pgBinaryBytes(Codec<A> codec, String pgType, A value) throws Exception {
+    <A> byte[] pgBinaryBytes(Codec<A> codec, A value) throws Exception {
         try (var s = conn.createStatement()) {
             // DROP + CREATE instead of CREATE TEMP to handle connection reuse.
             s.execute("DROP TABLE IF EXISTS _bce");
-            s.execute("CREATE TEMP TABLE _bce (v " + pgType + ")");
+            s.execute("CREATE TEMP TABLE _bce (v " + codec.typeSig() + ")");
         }
         try (var ps = conn.prepareStatement("INSERT INTO _bce VALUES (?)")) {
             if (value != null) {
@@ -132,32 +132,28 @@ abstract class CodecITBase {
     }
 
     /**
-     * Hex-encodes a byte array.
-     */
-    static String hex(byte[] b) {
-        return HexFormat.of().formatHex(b);
-    }
-
-    /**
-     * Wraps {@code b} in a big-endian {@link ByteBuffer} ready for decoding.
-     */
-    static ByteBuffer wrap(byte[] b) {
-        return ByteBuffer.wrap(b).order(ByteOrder.BIG_ENDIAN);
-    }
-
-    /**
      * Asserts that {@code codec.encode(value)} matches PostgreSQL's binary
      * representation, and that {@code codec.decodeBinary} recovers the original
      * value via {@link Object#equals}.
      */
-    <A> void assertBinaryRoundTrip(Codec<A> codec, String pgType, A value) throws Exception {
-        byte[] pgBytes = pgBinaryBytes(codec, pgType, value);
+    <A> void assertBinaryRoundTrip(Codec<A> codec, A value) throws Exception {
+
+        byte[] pgBytes = pgBinaryBytes(codec, value);
         byte[] ourBytes = codec.encode(value);
-        assertEquals(hex(pgBytes), hex(ourBytes),
-                "encode mismatch for " + codec.name() + " value=" + value);
-        A decoded = codec.decodeBinary(wrap(pgBytes), pgBytes.length);
+
+        String pgHex = HexFormat.of().formatHex(pgBytes);
+        String ourHex = HexFormat.of().formatHex(ourBytes);
+
+        assertEquals(pgHex, ourHex,
+                "encode mismatch for " + codec.typeSig() + " value=" + value);
+
+        A decoded = codec.decodeBinary(
+                ByteBuffer.wrap(pgBytes).order(ByteOrder.BIG_ENDIAN),
+                pgBytes.length);
+
         assertEquals(value, decoded,
-                "decode mismatch for " + codec.name() + " value=" + value);
+                "decode mismatch for " + codec.typeSig() + " value=" + value);
+
     }
 
     /**

@@ -57,15 +57,15 @@ public class InetCodecIT extends CodecITBase {
 
     @Test
     void inetIpv4Binary() throws Exception {
-        assertBinaryRoundTrip(Inet.CODEC, "inet", INET_IPV4_HOST);
-        assertBinaryRoundTrip(Inet.CODEC, "inet", INET_IPV4_SUBNET);
-        assertBinaryRoundTrip(Inet.CODEC, "inet", new Inet.V4(0, (byte) 0));
+        assertBinaryRoundTrip(Inet.CODEC, INET_IPV4_HOST);
+        assertBinaryRoundTrip(Inet.CODEC, INET_IPV4_SUBNET);
+        assertBinaryRoundTrip(Inet.CODEC, new Inet.V4(0, (byte) 0));
     }
 
     @Test
     void inetIpv6Binary() throws Exception {
-        assertBinaryRoundTrip(Inet.CODEC, "inet", INET_IPV6_LOOPBACK);
-        assertBinaryRoundTrip(Inet.CODEC, "inet", INET_IPV6_DOC);
+        assertBinaryRoundTrip(Inet.CODEC, INET_IPV6_LOOPBACK);
+        assertBinaryRoundTrip(Inet.CODEC, INET_IPV6_DOC);
     }
 
     @ParameterizedTest
@@ -77,7 +77,7 @@ public class InetCodecIT extends CodecITBase {
     @ParameterizedTest
     @MethodSource("factory")
     void inetPropertyBinaryRoundTrip(Inet value) throws Exception {
-        assertBinaryRoundTrip(Inet.CODEC, "inet", value);
+        assertBinaryRoundTrip(Inet.CODEC, value);
     }
 
     static Stream<Arguments> factory() { return Arbitrary.samples(Arbitrary.INET); }

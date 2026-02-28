@@ -14,12 +14,12 @@ import io.pgenie.postgresqlcodecs.types.Macaddr;
 
 public class MacaddrCodecIT extends CodecITBase {
 
-    private static final Macaddr MAC_08002B010203 =
-            new Macaddr((byte)0x08, (byte)0x00, (byte)0x2b, (byte)0x01, (byte)0x02, (byte)0x03);
+    private static final Macaddr VALUE_1
+            = new Macaddr((byte) 0x08, (byte) 0x00, (byte) 0x2b, (byte) 0x01, (byte) 0x02, (byte) 0x03);
 
     @Test
     void macaddrRoundTrip() throws Exception {
-        assertEquals(MAC_08002B010203, roundTrip(Macaddr.CODEC, MAC_08002B010203));
+        assertEquals(VALUE_1, roundTrip(Macaddr.CODEC, VALUE_1));
     }
 
     @Test
@@ -34,9 +34,9 @@ public class MacaddrCodecIT extends CodecITBase {
 
     @Test
     void macaddrBinary() throws Exception {
-        assertBinaryRoundTrip(Macaddr.CODEC, "macaddr", MAC_08002B010203);
-        assertBinaryRoundTrip(Macaddr.CODEC, "macaddr",
-                new Macaddr((byte)0xff, (byte)0xff, (byte)0xff, (byte)0xff, (byte)0xff, (byte)0xff));
+        assertBinaryRoundTrip(Macaddr.CODEC, VALUE_1);
+        assertBinaryRoundTrip(Macaddr.CODEC,
+                new Macaddr((byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff));
     }
 
     @ParameterizedTest
@@ -48,9 +48,11 @@ public class MacaddrCodecIT extends CodecITBase {
     @ParameterizedTest
     @MethodSource("factory")
     void macaddrPropertyBinaryRoundTrip(Macaddr value) throws Exception {
-        assertBinaryRoundTrip(Macaddr.CODEC, "macaddr", value);
+        assertBinaryRoundTrip(Macaddr.CODEC, value);
     }
 
-    static Stream<Arguments> factory() { return Arbitrary.samples(Arbitrary.MACADDR); }
+    static Stream<Arguments> factory() {
+        return Arbitrary.samples(Arbitrary.MACADDR);
+    }
 
 }

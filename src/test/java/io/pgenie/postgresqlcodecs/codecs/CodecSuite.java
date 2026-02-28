@@ -3,15 +3,10 @@ package io.pgenie.postgresqlcodecs.codecs;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
 import org.postgresql.util.PGobject;
 import org.testcontainers.containers.PostgreSQLContainer;
 
@@ -19,13 +14,13 @@ import io.pgenie.postgresqlcodecs.BinaryInBinaryOutR2dbcCodec;
 import io.pgenie.postgresqlcodecs.BinaryInTextOutR2dbcCodec;
 import io.pgenie.postgresqlcodecs.TextInBinaryOutR2dbcCodec;
 import io.pgenie.postgresqlcodecs.TextInTextOutR2dbcCodec;
-import io.pgenie.postgresqlcodecs.arbitrary.Arbitrary;
 import io.r2dbc.postgresql.PostgresqlConnectionConfiguration;
 import io.r2dbc.postgresql.PostgresqlConnectionFactory;
+import net.jqwik.api.ForAll;
+import net.jqwik.api.Property;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 abstract class CodecSuite<A> {
 
     static final PostgreSQLContainer<?> pg;
@@ -36,7 +31,6 @@ abstract class CodecSuite<A> {
     }
 
     private final Codec<A> codec;
-    private final Arbitrary<A> arbitrary;
     private final Class<A> type;
 
     /**
@@ -72,9 +66,8 @@ abstract class CodecSuite<A> {
      */
     private final PostgresqlConnectionFactory binaryInTextOutFactory;
 
-    protected CodecSuite(Codec<A> codec, Arbitrary<A> arbitrary, Class<A> type) {
+    protected CodecSuite(Codec<A> codec, Class<A> type) {
         this.codec = codec;
-        this.arbitrary = arbitrary;
         this.type = type;
 
         try {
@@ -130,10 +123,6 @@ abstract class CodecSuite<A> {
                 c -> c.close()).block();
     }
 
-    private Stream<Arguments> factory() {
-        return Arbitrary.samples(arbitrary);
-    }
-
     // -----------------------------------------------------------------------
     // Tests
     // -----------------------------------------------------------------------
@@ -153,41 +142,36 @@ abstract class CodecSuite<A> {
         }
     }
 
-    @ParameterizedTest
-    @MethodSource("factory")
-    void roundtripsInBinaryToBinaryViaR2dbc(A value) throws Exception {
+    @Property(tries = 100)
+    void roundtripsInBinaryToBinaryViaR2dbc(@ForAll("values") A value) throws Exception {
         A decoded = roundtripViaR2dbc(binaryInBinaryOutFactory, value);
         assertEquals(value, decoded,
                 "decode mismatch for " + codec.typeSig() + " value=" + value);
     }
 
-    @ParameterizedTest
-    @MethodSource("factory")
-    void roundtripsInTextToTextViaR2dbc(A value) throws Exception {
+    @Property(tries = 100)
+    void roundtripsInTextToTextViaR2dbc(@ForAll("values") A value) throws Exception {
         A decoded = roundtripViaR2dbc(textInTextOutFactory, value);
         assertEquals(value, decoded,
                 "decode mismatch for " + codec.typeSig() + " value=" + value);
     }
 
-    @ParameterizedTest
-    @MethodSource("factory")
-    void roundtripsInTextToBinaryViaR2dbc(A value) throws Exception {
+    @Property(tries = 100)
+    void roundtripsInTextToBinaryViaR2dbc(@ForAll("values") A value) throws Exception {
         A decoded = roundtripViaR2dbc(textInBinaryOutFactory, value);
         assertEquals(value, decoded,
                 "decode mismatch for " + codec.typeSig() + " value=" + value);
     }
 
-    @ParameterizedTest
-    @MethodSource("factory")
-    void roundtripsInBinaryToTextViaR2dbc(A value) throws Exception {
+    @Property(tries = 100)
+    void roundtripsInBinaryToTextViaR2dbc(@ForAll("values") A value) throws Exception {
         A decoded = roundtripViaR2dbc(binaryInTextOutFactory, value);
         assertEquals(value, decoded,
                 "decode mismatch for " + codec.typeSig() + " value=" + value);
     }
 
-    @ParameterizedTest
-    @MethodSource("factory")
-    void roundtripsInTextToTextViaPgjdbc(A value) throws Exception {
+    @Property(tries = 100)
+    void roundtripsInTextToTextViaPgjdbc(@ForAll("values") A value) throws Exception {
         try (var ps = conn.prepareStatement("SELECT ?::" + codec.typeSig())) {
             if (value != null) {
                 PGobject obj = new PGobject();

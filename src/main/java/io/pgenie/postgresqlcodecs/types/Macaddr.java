@@ -1,5 +1,6 @@
 package io.pgenie.postgresqlcodecs.types;
 
+import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.util.Random;
 
@@ -75,8 +76,13 @@ public record Macaddr(byte b1, byte b2, byte b3, byte b4, byte b5, byte b6) {
         }
 
         @Override
-        public byte[] encode(Macaddr value) {
-            return new byte[]{value.b1(), value.b2(), value.b3(), value.b4(), value.b5(), value.b6()};
+        public void encode(Macaddr value, ByteArrayOutputStream out) {
+            out.write(value.b1());
+            out.write(value.b2());
+            out.write(value.b3());
+            out.write(value.b4());
+            out.write(value.b5());
+            out.write(value.b6());
         }
 
         @Override

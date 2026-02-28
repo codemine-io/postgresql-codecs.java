@@ -1,7 +1,7 @@
 package io.pgenie.postgresqlcodecs.codecs;
 
+import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.function.Function;
 
 /**
@@ -181,7 +181,8 @@ public final class CompositeCodec<Z> implements Codec<Z> {
     // Binary wire format
     // -----------------------------------------------------------------------
     /**
-     * Encodes the composite value in the PostgreSQL binary composite format.
+     * Encodes the composite value in the PostgreSQL binary composite format,
+     * appending the bytes to {@code out}.
      *
      * <p>
      * Layout:
@@ -195,39 +196,28 @@ public final class CompositeCodec<Z> implements Codec<Z> {
      */
     @Override
     @SuppressWarnings("unchecked")
-    public byte[] encode(Z value) {
-        // Pre-encode all fields
-        byte[][] encodedFields = new byte[fields.length][];
-        for (int i = 0; i < fields.length; i++) {
-            var field = (Field<Z, Object>) fields[i];
+    public void encode(Z value, ByteArrayOutputStream out) {
+        writeInt32(out, fields.length);
+        for (var f : fields) {
+            var field = (Field<Z, Object>) f;
             Object fieldValue = field.accessor.apply(value);
-            encodedFields[i] = (fieldValue != null) ? field.codec.encode(fieldValue) : null;
-        }
-
-        // Compute total buffer size: 4 (field_count) + fields × (4 oid + 4 length + data)
-        int totalSize = 4;
-        for (byte[] ef : encodedFields) {
-            totalSize += 4 + 4; // oid + length
-            if (ef != null) {
-                totalSize += ef.length;
-            }
-        }
-
-        ByteBuffer buf = ByteBuffer.allocate(totalSize).order(ByteOrder.BIG_ENDIAN);
-        buf.putInt(fields.length);
-
-        for (int i = 0; i < fields.length; i++) {
-            var field = (Field<Z, Object>) fields[i];
-            buf.putInt(field.codec.oid()); // field OID (0 if unknown)
-            byte[] ef = encodedFields[i];
-            if (ef == null) {
-                buf.putInt(-1);             // NULL
+            writeInt32(out, field.codec.oid());
+            if (fieldValue == null) {
+                writeInt32(out, -1);
             } else {
-                buf.putInt(ef.length);
-                buf.put(ef);
+                var fieldOut = new ByteArrayOutputStream();
+                field.codec.encode(fieldValue, fieldOut);
+                writeInt32(out, fieldOut.size());
+                out.write(fieldOut.toByteArray(), 0, fieldOut.size());
             }
         }
-        return buf.array();
+    }
+
+    private static void writeInt32(ByteArrayOutputStream out, int v) {
+        out.write((v >>> 24) & 0xFF);
+        out.write((v >>> 16) & 0xFF);
+        out.write((v >>> 8) & 0xFF);
+        out.write(v & 0xFF);
     }
 
     /**

@@ -67,6 +67,10 @@ public interface Codec<A> {
         return 0;
     }
 
+    default int jdbcType() {
+        return java.sql.Types.OTHER;
+    }
+
     // -----------------------------------------------------------------------
     // Textual wire format
     // -----------------------------------------------------------------------

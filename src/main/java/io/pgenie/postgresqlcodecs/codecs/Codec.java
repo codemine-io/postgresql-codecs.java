@@ -2,6 +2,7 @@ package io.pgenie.postgresqlcodecs.codecs;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
+import java.util.Random;
 import java.util.function.Function;
 
 /**
@@ -132,6 +133,13 @@ public interface Codec<A> {
    * @throws UnsupportedOperationException if binary decoding is not implemented for this type
    */
   A decodeBinary(ByteBuffer buf, int length) throws ParseException;
+
+  /**
+   * Generates a random value of type A, for testing purposes. The provided {@link Random} instance
+   * should be used as the source of randomness, and the generated values should cover a wide range
+   * of possible inputs, including edge cases.
+   */
+  A random(Random r);
 
   /**
    * Returns a new codec that maps values of type A to type B using the provided pair of mapping

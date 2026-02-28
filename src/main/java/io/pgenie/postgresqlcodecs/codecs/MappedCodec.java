@@ -2,6 +2,7 @@ package io.pgenie.postgresqlcodecs.codecs;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
+import java.util.Random;
 import java.util.function.Function;
 
 final class MappedCodec<A, B> implements Codec<B> {
@@ -48,5 +49,10 @@ final class MappedCodec<A, B> implements Codec<B> {
   @Override
   public B decodeBinary(ByteBuffer buf, int length) throws Codec.ParseException {
     return toMapped.apply(codec.decodeBinary(buf, length));
+  }
+
+  @Override
+  public B random(Random r) {
+    return toMapped.apply(codec.random(r));
   }
 }

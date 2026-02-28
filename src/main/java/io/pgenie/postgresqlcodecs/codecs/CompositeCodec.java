@@ -2,6 +2,7 @@ package io.pgenie.postgresqlcodecs.codecs;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
+import java.util.Random;
 import java.util.function.Function;
 
 /**
@@ -307,6 +308,18 @@ public final class CompositeCodec<Z> implements Codec<Z> {
         Object fieldValue = ((Codec<Object>) fields[i].codec).decodeBinary(buf, fieldLen);
         fn = ((Function<Object, Object>) fn).apply(fieldValue);
       }
+    }
+    return (Z) fn;
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public Z random(Random r) {
+    Object fn = constructor;
+    for (var f : fields) {
+      var field = (Field<Z, Object>) f;
+      Object randomValue = ((Codec<Object>) field.codec).random(r);
+      fn = ((Function<Object, Object>) fn).apply(randomValue);
     }
     return (Z) fn;
   }

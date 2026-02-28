@@ -2,8 +2,11 @@ package io.pgenie.postgresqlcodecs.codecs;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 /**
  * Codec for PostgreSQL {@code ENUM} types, mapping between Java enum constants and their
@@ -69,5 +72,11 @@ public final class EnumCodec<E> implements Codec<E> {
   public E decodeBinary(ByteBuffer buf, int length) throws ParseException {
     // TODO Auto-generated method stub
     throw new UnsupportedOperationException("Unimplemented method 'decodeBinary'");
+  }
+
+  @Override
+  public E random(Random r) {
+    List<E> values = new ArrayList<>(pgLabels.keySet());
+    return values.get(r.nextInt(values.size()));
   }
 }

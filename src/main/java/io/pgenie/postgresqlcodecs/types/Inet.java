@@ -36,18 +36,6 @@ public sealed interface Inet permits Inet.V4, Inet.V6 {
    */
   record V6(int w1, int w2, int w3, int w4, byte netmask) implements Inet {}
 
-  /**
-   * Generates a random {@code Inet} value — either an IPv4 or IPv6 address with a random host
-   * address and a netmask that covers the full valid range.
-   */
-  static Inet generate(Random r) {
-    if (r.nextBoolean()) {
-      return new V4(r.nextInt(), (byte) r.nextInt(0, 33));
-    } else {
-      return new V6(r.nextInt(), r.nextInt(), r.nextInt(), r.nextInt(), (byte) r.nextInt(0, 129));
-    }
-  }
-
   public static final Codec<Inet> CODEC =
       new Codec<Inet>() {
 
@@ -296,6 +284,20 @@ public sealed interface Inet permits Inet.V4, Inet.V6 {
             result[i] = Integer.parseInt(parts[i], 16);
           }
           return result;
+        }
+
+        /**
+         * Generates a random {@code Inet} value — either an IPv4 or IPv6 address with a random host
+         * address and a netmask that covers the full valid range.
+         */
+        @Override
+        public Inet random(Random r) {
+          if (r.nextBoolean()) {
+            return new V4(r.nextInt(), (byte) r.nextInt(0, 33));
+          } else {
+            return new V6(
+                r.nextInt(), r.nextInt(), r.nextInt(), r.nextInt(), (byte) r.nextInt(0, 129));
+          }
         }
       };
 }

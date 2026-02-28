@@ -13,8 +13,10 @@ import io.r2dbc.spi.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import net.jqwik.api.Arbitrary;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
+import net.jqwik.api.Provide;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -125,6 +127,11 @@ abstract class CodecSuite<A> {
         .flatMap(result -> result.map((row, meta) -> row.get(0, type)))
         .single()
         .block();
+  }
+
+  @Provide
+  Arbitrary<A> values() {
+    return net.jqwik.api.Arbitraries.randomValue(codec::random);
   }
 
   // -----------------------------------------------------------------------

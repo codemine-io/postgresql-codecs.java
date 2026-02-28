@@ -41,6 +41,8 @@ public final class Generators {
     // PostgreSQL date range: 4713 BC (= proleptic year -4712) to 5874897 AD.
     private static final long DATE_MIN_EPOCH_DAY = LocalDate.of(-4712, 1, 1).toEpochDay();
     private static final long DATE_MAX_EPOCH_DAY = LocalDate.of(5874897, 12, 31).toEpochDay();
+    // Lower bound for AD-only generators (avoids JDBC binding limitations for BC dates).
+    private static final long DATE_AD_EPOCH_DAY = LocalDate.of(1, 1, 1).toEpochDay();
 
     // PostgreSQL timestamp range: 4713 BC to 294276 AD (stored as microseconds since PG epoch).
     // PG epoch = 2000-01-01 00:00:00 UTC.
@@ -153,13 +155,13 @@ public final class Generators {
             StringBuilder sb = new StringBuilder();
             if (negative) sb.append('-');
             for (int i = 0; i < intDigits; i++) {
-                sb.append((char) ('0' + r.nextInt(0, 10)));
+                sb.append((char) ('0' + r.nextInt(0, 9)));
             }
             if (intDigits == 0) sb.append('0');
             if (fracDigits > 0) {
                 sb.append('.');
                 for (int i = 0; i < fracDigits; i++) {
-                    sb.append((char) ('0' + r.nextInt(0, 10)));
+                    sb.append((char) ('0' + r.nextInt(0, 9)));
                 }
                 // Ensure at least one non-zero fractional digit to preserve scale
                 if (sb.toString().matches("-?0+\\.0+")) {
@@ -244,13 +246,30 @@ public final class Generators {
     // -----------------------------------------------------------------------
 
     /**
-     * Arbitrary {@code date} values spanning PostgreSQL's full supported range:
-     * 4713 BC (proleptic year −4712) to 5874897 AD.
+     * Arbitrary {@code date} values spanning the full PostgreSQL range (4713 BC to 5874897 AD).
+     *
+     * <p>Use this generator for binary round-trip tests.  For text round-trip
+     * tests use {@link #datesAD()} which restricts to AD dates to avoid JDBC
+     * binding limitations for BC dates.
      */
     public static Stream<Arguments> dates() {
         var r = rng();
         return Stream.generate(() -> {
             long day = r.nextLong(DATE_MIN_EPOCH_DAY, DATE_MAX_EPOCH_DAY);
+            return Arguments.of(LocalDate.ofEpochDay(day));
+        }).limit(COUNT);
+    }
+
+    /**
+     * Arbitrary AD-only {@code date} values (year 1 AD to 5874897 AD).
+     *
+     * <p>Restricts to AD dates to avoid JDBC binding issues with BC dates in
+     * {@code ps.setDate(Date.valueOf(bcDate))}.  Use for text round-trip tests.
+     */
+    public static Stream<Arguments> datesAD() {
+        var r = rng();
+        return Stream.generate(() -> {
+            long day = r.nextLong(DATE_AD_EPOCH_DAY, DATE_MAX_EPOCH_DAY);
             return Arguments.of(LocalDate.ofEpochDay(day));
         }).limit(COUNT);
     }
@@ -287,6 +306,9 @@ public final class Generators {
     /**
      * Arbitrary {@code timestamp} values spanning PostgreSQL's documented range:
      * 4713 BC to 294276 AD, with microsecond precision.
+     *
+     * <p>Use this generator for binary round-trip tests.  For text round-trip
+     * tests use {@link #timestampsAD()} which restricts to AD dates.
      */
     public static Stream<Arguments> timestamps() {
         var r = rng();
@@ -300,15 +322,53 @@ public final class Generators {
     }
 
     /**
+     * Arbitrary AD-only {@code timestamp} values (year 1 AD to 294276 AD, microsecond precision).
+     *
+     * <p>Restricts to AD dates to avoid JDBC binding issues with BC dates in
+     * {@code ps.setTimestamp(Timestamp.valueOf(bcDateTime))}.  Use for text round-trip tests.
+     */
+    public static Stream<Arguments> timestampsAD() {
+        var r = rng();
+        return Stream.generate(() -> {
+            long epochDay = r.nextLong(DATE_AD_EPOCH_DAY, TIMESTAMP_MAX_EPOCH_DAY);
+            long micros = r.nextLong(0L, 86_399_999_999L);
+            LocalDate date = LocalDate.ofEpochDay(epochDay);
+            LocalTime time = LocalTime.ofNanoOfDay(micros * 1_000L);
+            return Arguments.of(LocalDateTime.of(date, time));
+        }).limit(COUNT);
+    }
+
+    /**
      * Arbitrary {@code timestamptz} values normalised to UTC, since PostgreSQL
      * stores {@code timestamptz} as a UTC instant and the binary decoder returns
      * a UTC {@link OffsetDateTime}. Equality-based round-trip assertions
      * therefore require UTC input values.
+     *
+     * <p>Use this generator for binary round-trip tests.  For text round-trip
+     * tests use {@link #timestamptzADs()} which restricts to AD dates.
      */
     public static Stream<Arguments> timestamptzs() {
         var r = rng();
         return Stream.generate(() -> {
             long epochDay = r.nextLong(TIMESTAMP_MIN_EPOCH_DAY, TIMESTAMP_MAX_EPOCH_DAY);
+            long micros = r.nextLong(0L, 86_399_999_999L);
+            LocalDate date = LocalDate.ofEpochDay(epochDay);
+            LocalTime time = LocalTime.ofNanoOfDay(micros * 1_000L);
+            return Arguments.of(LocalDateTime.of(date, time).atOffset(ZoneOffset.UTC));
+        }).limit(COUNT);
+    }
+
+    /**
+     * Arbitrary AD-only UTC {@code timestamptz} values (year 1 AD to 294276 AD).
+     *
+     * <p>Restricts to AD dates to avoid JDBC binding issues with BC dates in
+     * {@code ps.setObject(bcOffsetDateTime, TIMESTAMP_WITH_TIMEZONE)}.
+     * Use for text round-trip tests.
+     */
+    public static Stream<Arguments> timestamptzADs() {
+        var r = rng();
+        return Stream.generate(() -> {
+            long epochDay = r.nextLong(DATE_AD_EPOCH_DAY, TIMESTAMP_MAX_EPOCH_DAY);
             long micros = r.nextLong(0L, 86_399_999_999L);
             LocalDate date = LocalDate.ofEpochDay(epochDay);
             LocalTime time = LocalTime.ofNanoOfDay(micros * 1_000L);

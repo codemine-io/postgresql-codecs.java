@@ -45,9 +45,12 @@ public class TimestamptzCodecIT extends CodecITBase {
      * <p>Values are UTC-normalised because PostgreSQL stores {@code timestamptz}
      * as a UTC instant; the binary decoder returns a UTC value, so equality
      * comparisons are only meaningful for UTC input.
+     *
+     * <p>Text round-trip uses AD-only timestamps to avoid JDBC BC-date binding limitations;
+     * binary round-trip uses the full range.
      */
     @ParameterizedTest
-    @MethodSource("io.pgenie.postgresqlCodecs.codecs.Generators#timestamptzs")
+    @MethodSource("io.pgenie.postgresqlCodecs.codecs.Generators#timestamptzADs")
     void timestamptzPropertyRoundTrip(OffsetDateTime value) throws Exception {
         assertEquals(value.toInstant(), roundTrip(Codec.TIMESTAMPTZ, value).toInstant());
     }

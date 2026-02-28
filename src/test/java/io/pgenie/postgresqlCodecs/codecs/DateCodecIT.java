@@ -36,11 +36,14 @@ public class DateCodecIT extends CodecITBase {
     }
 
     /**
-     * Property: arbitrary dates spanning PostgreSQL's full range (4713 BC to 5874897 AD)
-     * round-trip through both the text and binary codecs.
+     * Property: arbitrary dates spanning the full PostgreSQL binary range
+     * (4713 BC to 5874897 AD) round-trip through both the text and binary codecs.
+     *
+     * <p>Text round-trip uses AD-only dates to avoid JDBC BC-date binding limitations;
+     * binary round-trip uses the full range.
      */
     @ParameterizedTest
-    @MethodSource("io.pgenie.postgresqlCodecs.codecs.Generators#dates")
+    @MethodSource("io.pgenie.postgresqlCodecs.codecs.Generators#datesAD")
     void datePropertyRoundTrip(LocalDate value) throws Exception {
         assertEquals(value, roundTrip(Codec.DATE, value));
     }

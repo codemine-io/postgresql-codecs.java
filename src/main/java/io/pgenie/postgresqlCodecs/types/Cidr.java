@@ -1,4 +1,4 @@
-package io.pgenie.postgresqlCodecs.codecs;
+package io.pgenie.postgresqlCodecs.types;
 
 /**
  * PostgreSQL {@code cidr} type. IPv4 or IPv6 network specification.

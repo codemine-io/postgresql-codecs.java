@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import org.junit.jupiter.api.Test;
 
+import io.pgenie.postgresqlCodecs.types.Cidr;
+
 public class CidrCodecIT extends CodecITBase {
 
     // 192.168.1.0/24

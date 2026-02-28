@@ -1,4 +1,4 @@
-package io.pgenie.postgresqlCodecs.codecs;
+package io.pgenie.postgresqlCodecs.types;
 
 /**
  * PostgreSQL {@code inet} type. IPv4 or IPv6 host address with optional subnet mask.

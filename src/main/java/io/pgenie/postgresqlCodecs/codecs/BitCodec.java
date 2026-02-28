@@ -8,6 +8,8 @@ import java.sql.Types;
 
 import org.postgresql.util.PGobject;
 
+import io.pgenie.postgresqlCodecs.types.Bit;
+
 final class BitCodec implements Codec<Bit> {
 
     static final BitCodec instance = new BitCodec();

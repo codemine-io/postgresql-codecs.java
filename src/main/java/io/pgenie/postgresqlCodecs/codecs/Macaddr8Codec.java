@@ -7,6 +7,8 @@ import java.sql.Types;
 
 import org.postgresql.util.PGobject;
 
+import io.pgenie.postgresqlCodecs.types.Macaddr8;
+
 final class Macaddr8Codec implements Codec<Macaddr8> {
 
     static final Macaddr8Codec instance = new Macaddr8Codec();

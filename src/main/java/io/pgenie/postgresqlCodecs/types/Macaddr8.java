@@ -1,4 +1,4 @@
-package io.pgenie.postgresqlCodecs.codecs;
+package io.pgenie.postgresqlCodecs.types;
 
 /**
  * PostgreSQL {@code macaddr8} type. 8-byte MAC (Media Access Control) address in EUI-64 format.

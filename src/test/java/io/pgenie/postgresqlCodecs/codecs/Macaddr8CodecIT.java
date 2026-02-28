@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import org.junit.jupiter.api.Test;
 
+import io.pgenie.postgresqlCodecs.types.Macaddr8;
+
 public class Macaddr8CodecIT extends CodecITBase {
 
     private static final Macaddr8 MAC_08002B0102030405 = new Macaddr8(

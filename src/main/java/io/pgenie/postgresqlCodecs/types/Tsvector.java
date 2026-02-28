@@ -1,4 +1,4 @@
-package io.pgenie.postgresqlCodecs.codecs;
+package io.pgenie.postgresqlCodecs.types;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -28,7 +28,7 @@ public final class Tsvector {
         A, B, C, D;
 
         /** Encodes weight to the 2-bit field used in binary protocol (A=3, B=2, C=1, D=0). */
-        int toBits() {
+        public int toBits() {
             return switch (this) {
                 case A -> 3;
                 case B -> 2;
@@ -38,7 +38,7 @@ public final class Tsvector {
         }
 
         /** Decodes weight from the 2-bit field in binary protocol. */
-        static Weight fromBits(int bits) {
+        public static Weight fromBits(int bits) {
             return switch (bits & 0x3) {
                 case 3 -> A;
                 case 2 -> B;

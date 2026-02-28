@@ -8,6 +8,8 @@ import java.sql.Types;
 
 import org.postgresql.util.PGobject;
 
+import io.pgenie.postgresqlCodecs.types.Interval;
+
 final class IntervalCodec implements Codec<Interval> {
 
     static final IntervalCodec instance = new IntervalCodec();

@@ -8,6 +8,9 @@ import java.sql.Types;
 
 import org.postgresql.util.PGobject;
 
+import io.pgenie.postgresqlCodecs.types.Cidr;
+import io.pgenie.postgresqlCodecs.types.Inet;
+
 final class InetCodec implements Codec<Inet> {
 
     static final InetCodec instance = new InetCodec();

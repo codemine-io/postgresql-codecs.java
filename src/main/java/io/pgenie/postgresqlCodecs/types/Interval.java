@@ -1,4 +1,4 @@
-package io.pgenie.postgresqlCodecs.codecs;
+package io.pgenie.postgresqlCodecs.types;
 
 /**
  * PostgreSQL {@code interval} type. Time span with separate month, day, and microsecond

@@ -2,6 +2,8 @@ package io.pgenie.postgresqlCodecs.codecs;
 
 import org.junit.jupiter.api.Test;
 
+import io.pgenie.postgresqlCodecs.types.Inet;
+
 import java.sql.ResultSet;
 import java.time.LocalDate;
 import java.time.LocalDateTime;

@@ -8,6 +8,8 @@ import java.sql.Types;
 
 import org.postgresql.util.PGobject;
 
+import io.pgenie.postgresqlCodecs.types.Cidr;
+
 final class CidrCodec implements Codec<Cidr> {
 
     static final CidrCodec instance = new CidrCodec();

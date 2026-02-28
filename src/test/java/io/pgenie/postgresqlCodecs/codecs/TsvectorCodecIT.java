@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 
+import io.pgenie.postgresqlCodecs.types.Tsvector;
+
 public class TsvectorCodecIT extends CodecITBase {
 
     private static Tsvector simpleTs() {

@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import org.junit.jupiter.api.Test;
 
+import io.pgenie.postgresqlCodecs.types.Interval;
+
 public class IntervalCodecIT extends CodecITBase {
 
     @Test

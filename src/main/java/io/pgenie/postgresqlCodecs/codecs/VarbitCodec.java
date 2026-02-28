@@ -8,6 +8,8 @@ import java.sql.Types;
 
 import org.postgresql.util.PGobject;
 
+import io.pgenie.postgresqlCodecs.types.Varbit;
+
 final class VarbitCodec implements Codec<Varbit> {
 
     static final VarbitCodec instance = new VarbitCodec();

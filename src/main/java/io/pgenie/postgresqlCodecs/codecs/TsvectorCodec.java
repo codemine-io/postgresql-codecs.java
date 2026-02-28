@@ -12,6 +12,8 @@ import java.util.Map;
 
 import org.postgresql.util.PGobject;
 
+import io.pgenie.postgresqlCodecs.types.Tsvector;
+
 final class TsvectorCodec implements Codec<Tsvector> {
 
     static final TsvectorCodec instance = new TsvectorCodec();

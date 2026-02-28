@@ -3,6 +3,15 @@ package io.pgenie.postgresqlCodecs.codecs;
 import java.nio.ByteBuffer;
 import java.sql.PreparedStatement;
 
+import io.pgenie.postgresqlCodecs.types.Bit;
+import io.pgenie.postgresqlCodecs.types.Cidr;
+import io.pgenie.postgresqlCodecs.types.Inet;
+import io.pgenie.postgresqlCodecs.types.Interval;
+import io.pgenie.postgresqlCodecs.types.Macaddr;
+import io.pgenie.postgresqlCodecs.types.Macaddr8;
+import io.pgenie.postgresqlCodecs.types.Tsvector;
+import io.pgenie.postgresqlCodecs.types.Varbit;
+
 /**
  * A codec for a single scalar value.
  *

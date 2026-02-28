@@ -1,6 +1,7 @@
 package io.pgenie.postgresqlcodecs.codecs;
 
 import java.nio.ByteBuffer;
+import java.util.function.Function;
 
 /**
  * A codec for a single scalar value.
@@ -142,6 +143,21 @@ public interface Codec<A> {
      * implemented for this type
      */
     A decodeBinary(ByteBuffer buf, int length) throws ParseException;
+
+    /**
+     * Returns a new codec that maps values of type A to type B using the
+     * provided pair of mapping functions. The returned codec encodes and
+     * decodes values of type B by delegating to this codec for the underlying A
+     * values.
+     *
+     * @param <B>
+     * @param to
+     * @param from
+     * @return
+     */
+    default <B> Codec<B> map(Function<A, B> to, Function<B, A> from) {
+        return new MappedCodec<>(this, to, from);
+    }
 
     // -----------------------------------------------------------------------
     // Result / exception types

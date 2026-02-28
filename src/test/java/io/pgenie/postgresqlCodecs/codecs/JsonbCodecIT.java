@@ -10,7 +10,7 @@ public class JsonbCodecIT extends CodecITBase {
     @Test
     void jsonbRoundTrip() throws Exception {
         String json = "{\"key\": \"value\"}";
-        String result = roundTrip(Codec.JSONB, "jsonb", json);
+        String result = roundTrip(Codec.JSONB, json);
         // JSONB may reformat
         assertNotNull(result);
         assertTrue(result.contains("key"));
@@ -19,13 +19,13 @@ public class JsonbCodecIT extends CodecITBase {
 
     @Test
     void jsonbNull() throws Exception {
-        assertNull(roundTrip(Codec.JSONB, "jsonb", null));
+        assertNull(roundTrip(Codec.JSONB, null));
     }
 
 
     @Test
     void jsonbOid() throws Exception {
-        assertOid(Codec.JSONB, "jsonb");
+        assertOid(Codec.JSONB);
     }
 
 }

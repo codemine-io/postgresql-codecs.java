@@ -8,14 +8,14 @@ public class LsegCodecIT extends CodecITBase {
     @Test
     void lsegRoundTrip() throws Exception {
         var lseg = new org.postgresql.geometric.PGlseg(1.0, 2.0, 3.0, 4.0);
-        var result = roundTrip(Codec.LSEG, "lseg", lseg);
+        var result = roundTrip(Codec.LSEG, lseg);
         assertNotNull(result);
     }
 
 
     @Test
     void lsegOid() throws Exception {
-        assertOid(Codec.LSEG, "lseg");
+        assertOid(Codec.LSEG);
     }
 
     @Test

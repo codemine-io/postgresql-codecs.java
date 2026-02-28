@@ -11,24 +11,24 @@ public class TimestampCodecIT extends CodecITBase {
     @Test
     void timestampRoundTrip() throws Exception {
         var ts = LocalDateTime.of(2024, 6, 15, 14, 30, 45);
-        assertEquals(ts, roundTrip(Codec.TIMESTAMP, "timestamp", ts));
+        assertEquals(ts, roundTrip(Codec.TIMESTAMP, ts));
     }
 
     @Test
     void timestampWithMicros() throws Exception {
         var ts = LocalDateTime.of(2024, 6, 15, 14, 30, 45, 123456000);
-        assertEquals(ts, roundTrip(Codec.TIMESTAMP, "timestamp", ts));
+        assertEquals(ts, roundTrip(Codec.TIMESTAMP, ts));
     }
 
     @Test
     void timestampNull() throws Exception {
-        assertNull(roundTrip(Codec.TIMESTAMP, "timestamp", null));
+        assertNull(roundTrip(Codec.TIMESTAMP, null));
     }
 
 
     @Test
     void timestampOid() throws Exception {
-        assertOid(Codec.TIMESTAMP, "timestamp");
+        assertOid(Codec.TIMESTAMP);
     }
 
     @Test

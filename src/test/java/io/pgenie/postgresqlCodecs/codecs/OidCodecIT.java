@@ -8,18 +8,18 @@ public class OidCodecIT extends CodecITBase {
 
     @Test
     void oidRoundTrip() throws Exception {
-        assertEquals(12345L, roundTrip(Codec.OID, "oid", 12345L));
+        assertEquals(12345L, roundTrip(Codec.OID, 12345L));
     }
 
     @Test
     void oidNull() throws Exception {
-        assertNull(roundTrip(Codec.OID, "oid", null));
+        assertNull(roundTrip(Codec.OID, null));
     }
 
 
     @Test
     void oidOid() throws Exception {
-        assertOid(Codec.OID, "oid");
+        assertOid(Codec.OID);
     }
 
 }

@@ -11,24 +11,24 @@ public class TimeCodecIT extends CodecITBase {
     @Test
     void timeRoundTrip() throws Exception {
         assertEquals(LocalTime.of(14, 30, 45),
-                roundTrip(Codec.TIME, "time", LocalTime.of(14, 30, 45)));
+                roundTrip(Codec.TIME, LocalTime.of(14, 30, 45)));
     }
 
     @Test
     void timeWithMicros() throws Exception {
         var t = LocalTime.of(14, 30, 45, 123456000);
-        assertEquals(t, roundTrip(Codec.TIME, "time", t));
+        assertEquals(t, roundTrip(Codec.TIME, t));
     }
 
     @Test
     void timeNull() throws Exception {
-        assertNull(roundTrip(Codec.TIME, "time", null));
+        assertNull(roundTrip(Codec.TIME, null));
     }
 
 
     @Test
     void timeOid() throws Exception {
-        assertOid(Codec.TIME, "time");
+        assertOid(Codec.TIME);
     }
 
     @Test

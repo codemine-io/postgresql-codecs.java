@@ -11,18 +11,18 @@ public class DateCodecIT extends CodecITBase {
     @Test
     void dateRoundTrip() throws Exception {
         assertEquals(LocalDate.of(2024, 6, 15),
-                roundTrip(Codec.DATE, "date", LocalDate.of(2024, 6, 15)));
+                roundTrip(Codec.DATE, LocalDate.of(2024, 6, 15)));
     }
 
     @Test
     void dateNull() throws Exception {
-        assertNull(roundTrip(Codec.DATE, "date", null));
+        assertNull(roundTrip(Codec.DATE, null));
     }
 
 
     @Test
     void dateOid() throws Exception {
-        assertOid(Codec.DATE, "date");
+        assertOid(Codec.DATE);
     }
 
     @Test

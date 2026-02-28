@@ -33,7 +33,7 @@ public class ByteaCodecIT extends CodecITBase {
 
     @Test
     void byteaOid() throws Exception {
-        assertOid(Codec.BYTEA, "bytea");
+        assertOid(Codec.BYTEA);
     }
 
     @Test

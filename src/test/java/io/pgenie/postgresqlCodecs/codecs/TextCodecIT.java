@@ -8,29 +8,29 @@ public class TextCodecIT extends CodecITBase {
 
     @Test
     void textRoundTrip() throws Exception {
-        assertEquals("Hello, World!", roundTrip(Codec.TEXT, "text", "Hello, World!"));
+        assertEquals("Hello, World!", roundTrip(Codec.TEXT, "Hello, World!"));
     }
 
     @Test
     void textEmpty() throws Exception {
-        assertEquals("", roundTrip(Codec.TEXT, "text", ""));
+        assertEquals("", roundTrip(Codec.TEXT, ""));
     }
 
     @Test
     void textSpecialChars() throws Exception {
         assertEquals("It's a \"test\" with \\backslash",
-                roundTrip(Codec.TEXT, "text", "It's a \"test\" with \\backslash"));
+                roundTrip(Codec.TEXT, "It's a \"test\" with \\backslash"));
     }
 
     @Test
     void textNull() throws Exception {
-        assertNull(roundTrip(Codec.TEXT, "text", null));
+        assertNull(roundTrip(Codec.TEXT, null));
     }
 
 
     @Test
     void textOid() throws Exception {
-        assertOid(Codec.TEXT, "text");
+        assertOid(Codec.TEXT);
     }
 
     @Test

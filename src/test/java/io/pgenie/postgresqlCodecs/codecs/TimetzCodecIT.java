@@ -13,18 +13,18 @@ public class TimetzCodecIT extends CodecITBase {
     @Test
     void timetzRoundTrip() throws Exception {
         var t = OffsetTime.of(14, 30, 45, 0, ZoneOffset.ofHours(3));
-        assertEquals(t, roundTrip(Codec.TIMETZ, "timetz", t));
+        assertEquals(t, roundTrip(Codec.TIMETZ, t));
     }
 
     @Test
     void timetzNull() throws Exception {
-        assertNull(roundTrip(Codec.TIMETZ, "timetz", null));
+        assertNull(roundTrip(Codec.TIMETZ, null));
     }
 
 
     @Test
     void timetzOid() throws Exception {
-        assertOid(Codec.TIMETZ, "timetz");
+        assertOid(Codec.TIMETZ);
     }
 
     @Test

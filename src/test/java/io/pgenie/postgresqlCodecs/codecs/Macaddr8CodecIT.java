@@ -9,18 +9,18 @@ public class Macaddr8CodecIT extends CodecITBase {
     @Test
     void macaddr8RoundTrip() throws Exception {
         assertEquals("08:00:2b:01:02:03:04:05",
-                roundTrip(Codec.MACADDR8, "macaddr8", "08:00:2b:01:02:03:04:05"));
+                roundTrip(Codec.MACADDR8, "08:00:2b:01:02:03:04:05"));
     }
 
     @Test
     void macaddr8Null() throws Exception {
-        assertNull(roundTrip(Codec.MACADDR8, "macaddr8", null));
+        assertNull(roundTrip(Codec.MACADDR8, null));
     }
 
 
     @Test
     void macaddr8Oid() throws Exception {
-        assertOid(Codec.MACADDR8, "macaddr8");
+        assertOid(Codec.MACADDR8);
     }
 
     @Test

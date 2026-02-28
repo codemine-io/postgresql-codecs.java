@@ -10,30 +10,30 @@ public class InetCodecIT extends CodecITBase {
 
     @Test
     void inetIPv4() throws Exception {
-        assertEquals("192.168.1.1", roundTrip(Codec.INET, "inet", "192.168.1.1"));
+        assertEquals("192.168.1.1", roundTrip(Codec.INET, "192.168.1.1"));
     }
 
     @Test
     void inetIPv6() throws Exception {
-        String result = roundTrip(Codec.INET, "inet", "::1");
+        String result = roundTrip(Codec.INET, "::1");
         assertNotNull(result);
         assertTrue(result.equals("::1") || result.contains("::1"));
     }
 
     @Test
     void inetCIDR() throws Exception {
-        assertEquals("192.168.1.0/24", roundTrip(Codec.INET, "inet", "192.168.1.0/24"));
+        assertEquals("192.168.1.0/24", roundTrip(Codec.INET, "192.168.1.0/24"));
     }
 
     @Test
     void inetNull() throws Exception {
-        assertNull(roundTrip(Codec.INET, "inet", null));
+        assertNull(roundTrip(Codec.INET, null));
     }
 
 
     @Test
     void inetOid() throws Exception {
-        assertOid(Codec.INET, "inet");
+        assertOid(Codec.INET);
     }
 
     @Test

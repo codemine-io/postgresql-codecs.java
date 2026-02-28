@@ -16,8 +16,8 @@ import org.postgresql.core.BaseConnection;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 /**
- * Base class for codec integration tests. Provides a shared PostgreSQL container
- * and helper methods for round-trip testing.
+ * Base class for codec integration tests. Provides a shared PostgreSQL
+ * container and helper methods for round-trip testing.
  *
  * The container is started once per JVM via a static initializer and cleaned up
  * automatically by the TestContainers resource reaper (Ryuk) on JVM exit.
@@ -32,21 +32,27 @@ abstract class CodecITBase {
     }
 
     Connection connect() throws SQLException {
-        return DriverManager.getConnection(pg.getJdbcUrl(), pg.getUsername(), pg.getPassword());
+        var properties = new java.util.Properties();
+        properties.setProperty("user", pg.getUsername());
+        properties.setProperty("password", pg.getPassword());
+        properties.setProperty("binaryTransfer", "true");
+        return DriverManager.getConnection(pg.getJdbcUrl(), properties);
     }
 
     /**
-     * Generic helper: binds a value using the codec, sends it through PostgreSQL
-     * via a cast expression, reads back the text representation, and parses it.
+     * Generic helper: binds a value using the codec, sends it through
+     * PostgreSQL via a cast expression, reads back the text representation, and
+     * parses it.
      */
-    <A> A roundTrip(Codec<A> codec, String castType, A value) throws Exception {
-        try (var conn = connect();
-             var ps = conn.prepareStatement("SELECT ?::" + castType)) {
+    <A> A roundTrip(Codec<A> codec, A value) throws Exception {
+        try (var conn = connect(); var ps = conn.prepareStatement("SELECT ?::" + codec.typeSig())) {
             codec.bind(ps, 1, value);
             try (ResultSet rs = ps.executeQuery()) {
                 assertTrue(rs.next(), "Expected a result row");
                 String text = rs.getString(1);
-                if (text == null) return null;
+                if (text == null) {
+                    return null;
+                }
                 var result = codec.parse(text, 0);
                 return result.value;
             }
@@ -54,12 +60,11 @@ abstract class CodecITBase {
     }
 
     /**
-     * Helper for types where we just check string equality of results
-     * (useful when the Java type doesn't have a natural equals, like byte[]).
+     * Helper for types where we just check string equality of results (useful
+     * when the Java type doesn't have a natural equals, like byte[]).
      */
     <A> String roundTripText(Codec<A> codec, String castType, A value) throws Exception {
-        try (var conn = connect();
-             var ps = conn.prepareStatement("SELECT ?::" + castType)) {
+        try (var conn = connect(); var ps = conn.prepareStatement("SELECT ?::" + castType)) {
             codec.bind(ps, 1, value);
             try (ResultSet rs = ps.executeQuery()) {
                 assertTrue(rs.next(), "Expected a result row");
@@ -71,13 +76,13 @@ abstract class CodecITBase {
     // -----------------------------------------------------------------------
     // Binary helpers
     // -----------------------------------------------------------------------
-
     /**
      * Returns the binary wire bytes PostgreSQL uses for {@code value} of type
      * {@code pgType}, obtained by inserting the value into a temporary table
      * and reading it back via {@code COPY TO STDOUT BINARY}.
      *
-     * <p>This avoids any {@code *send()} SQL functions in the query text.
+     * <p>
+     * This avoids any {@code *send()} SQL functions in the query text.
      */
     <A> byte[] pgBinaryBytes(Codec<A> codec, String pgType, A value) throws Exception {
         try (var conn = connect()) {
@@ -104,12 +109,16 @@ abstract class CodecITBase {
         }
     }
 
-    /** Hex-encodes a byte array. */
+    /**
+     * Hex-encodes a byte array.
+     */
     static String hex(byte[] b) {
         return HexFormat.of().formatHex(b);
     }
 
-    /** Wraps {@code b} in a big-endian {@link ByteBuffer} ready for decoding. */
+    /**
+     * Wraps {@code b} in a big-endian {@link ByteBuffer} ready for decoding.
+     */
     static ByteBuffer wrap(byte[] b) {
         return ByteBuffer.wrap(b).order(ByteOrder.BIG_ENDIAN);
     }
@@ -131,16 +140,18 @@ abstract class CodecITBase {
 
     /**
      * Asserts that {@code codec.oid()} matches the OID stored in
-     * {@code pg_type} for {@code typname}.
+     * {@code pg_type}.
      */
-    void assertOid(Codec<?> codec, String typname) throws Exception {
-        if (codec.oid() == 0) return;
-        try (var conn = connect();
-             var ps = conn.prepareStatement("SELECT oid::int FROM pg_type WHERE typname = ?")) {
-            ps.setString(1, typname);
+    void assertOid(Codec<?> codec) throws Exception {
+        if (codec.oid() == 0) {
+            return;
+        }
+        try (var conn = connect(); var ps = conn.prepareStatement("SELECT oid::int FROM pg_type WHERE typname = ?")) {
+            // TODO: Account for schema-qualified types names
+            ps.setString(1, codec.name());
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    assertEquals(rs.getInt(1), codec.oid(), "OID mismatch for " + typname);
+                    assertEquals(rs.getInt(1), codec.oid(), "OID mismatch for " + codec.name());
                 }
             }
         }

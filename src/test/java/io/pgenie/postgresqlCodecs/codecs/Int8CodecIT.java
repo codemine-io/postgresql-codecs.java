@@ -8,23 +8,23 @@ public class Int8CodecIT extends CodecITBase {
 
     @Test
     void int8RoundTrip() throws Exception {
-        assertEquals(9876543210L, roundTrip(Codec.INT8, "int8", 9876543210L));
+        assertEquals(9876543210L, roundTrip(Codec.INT8, 9876543210L));
     }
 
     @Test
     void int8Negative() throws Exception {
-        assertEquals(-9876543210L, roundTrip(Codec.INT8, "int8", -9876543210L));
+        assertEquals(-9876543210L, roundTrip(Codec.INT8, -9876543210L));
     }
 
     @Test
     void int8Null() throws Exception {
-        assertNull(roundTrip(Codec.INT8, "int8", null));
+        assertNull(roundTrip(Codec.INT8, null));
     }
 
 
     @Test
     void int8Oid() throws Exception {
-        assertOid(Codec.INT8, "int8");
+        assertOid(Codec.INT8);
     }
 
     @Test

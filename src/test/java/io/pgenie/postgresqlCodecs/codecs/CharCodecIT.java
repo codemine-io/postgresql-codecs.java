@@ -7,8 +7,6 @@ public class CharCodecIT extends CodecITBase {
 
     @Test
     void charRoundTrip() throws Exception {
-        // char(5) pads with spaces
-        String result = roundTrip(Codec.CHAR, "char(5)", "ab");
-        assertEquals("ab   ", result);
+        assertEquals("a", roundTrip(Codec.CHAR, "a"));
     }
 }

@@ -6,15 +6,16 @@ import java.sql.PreparedStatement;
 /**
  * A codec for a single scalar value.
  *
- * <p>Each codec supports two wire formats:
+ * <p>
+ * Each codec supports two wire formats:
  * <ul>
- *   <li><b>Textual</b> — the PostgreSQL text representation, used via
- *       {@link #write} and {@link #parse}.  These methods are also used when
- *       encoding composite and array fields inside a composite/array literal.</li>
- *   <li><b>Binary</b> — the PostgreSQL binary wire format, used via
- *       {@link #encode} and {@link #decodeBinary}.  Binary encoding is compact,
- *       unambiguous and required when assembling composite or array values in
- *       binary protocol mode.</li>
+ * <li><b>Textual</b> — the PostgreSQL text representation, used via
+ * {@link #write} and {@link #parse}. These methods are also used when encoding
+ * composite and array fields inside a composite/array literal.</li>
+ * <li><b>Binary</b> — the PostgreSQL binary wire format, used via
+ * {@link #encode} and {@link #decodeBinary}. Binary encoding is compact,
+ * unambiguous and required when assembling composite or array values in binary
+ * protocol mode.</li>
  * </ul>
  *
  * @param <A> the type of the value
@@ -62,7 +63,6 @@ public interface Codec<A> {
     // -----------------------------------------------------------------------
     // Type metadata
     // -----------------------------------------------------------------------
-
     default String schema() {
         return "";
     }
@@ -72,20 +72,26 @@ public interface Codec<A> {
      */
     String name();
 
+    default String typeSig() {
+        String schema = schema();
+        return schema == null || schema.isEmpty() ? name() : schema + "." + name();
+    }
+
     /**
      * Returns the PostgreSQL base-type OID, or {@code 0} if not statically
      * known (e.g. user-defined composite types).
      *
-     * <p>The OID is used inside binary-format array and composite headers to
-     * tag each element with its type.
+     * <p>
+     * The OID is used inside binary-format array and composite headers to tag
+     * each element with its type.
      */
     default int oid() {
         return 0;
     }
 
     /**
-     * Returns the PostgreSQL array-type OID for this element type, or
-     * {@code 0} if not known.
+     * Returns the PostgreSQL array-type OID for this element type, or {@code 0}
+     * if not known.
      */
     default int arrayOid() {
         return 0;
@@ -94,7 +100,6 @@ public interface Codec<A> {
     // -----------------------------------------------------------------------
     // JDBC binding
     // -----------------------------------------------------------------------
-
     /**
      * Binds the given value to the specified index in the prepared statement.
      */
@@ -103,13 +108,13 @@ public interface Codec<A> {
     // -----------------------------------------------------------------------
     // Textual wire format
     // -----------------------------------------------------------------------
-
     /**
      * Writes the given value to the string builder in PostgreSQL textual
      * literal form.
      *
-     * <p>This is primarily used for encoding fields inside composite and array
-     * literals.  The written form must be the canonical text representation
+     * <p>
+     * This is primarily used for encoding fields inside composite and array
+     * literals. The written form must be the canonical text representation
      * accepted by PostgreSQL for the type.
      */
     void write(StringBuilder sb, A value);
@@ -118,16 +123,18 @@ public interface Codec<A> {
      * Parses a PostgreSQL text-format literal of type A from {@code input}
      * starting at {@code offset}.
      *
-     * <p>The input must be a non-null {@link CharSequence} holding the raw text
-     * as returned by the PostgreSQL server (e.g. the string value of a column
+     * <p>
+     * The input must be a non-null {@link CharSequence} holding the raw text as
+     * returned by the PostgreSQL server (e.g. the string value of a column
      * obtained via {@link java.sql.ResultSet#getString}). Passing the
      * {@code String} directly avoids an extra copy compared to converting to a
      * {@code char[]} first. NULL column values must be handled by the caller
      * before invoking this method.
      *
-     * <p>Returns the parsed value together with the offset of the first
-     * character that was <em>not</em> consumed, allowing callers to continue
-     * parsing subsequent fields without copying the input. Throws
+     * <p>
+     * Returns the parsed value together with the offset of the first character
+     * that was <em>not</em> consumed, allowing callers to continue parsing
+     * subsequent fields without copying the input. Throws
      * {@link ParseException} if the input cannot be interpreted as a valid
      * literal of type A.
      */
@@ -136,21 +143,22 @@ public interface Codec<A> {
     // -----------------------------------------------------------------------
     // Binary wire format
     // -----------------------------------------------------------------------
-
     /**
      * Encodes the given non-null value into the PostgreSQL binary wire format.
      *
-     * <p>The returned byte array holds exactly the binary payload for the
-     * value — no length prefix.  The caller (e.g. {@link ArrayCodec} or
+     * <p>
+     * The returned byte array holds exactly the binary payload for the value —
+     * no length prefix. The caller (e.g. {@link ArrayCodec} or
      * {@link CompositeCodec}) is responsible for prepending the 4-byte
      * {@code int32} length header required by the PostgreSQL composite and
      * array binary protocols.
      *
-     * <p>The byte order is always <b>big-endian</b>, as required by the
-     * PostgreSQL wire protocol.
+     * <p>
+     * The byte order is always <b>big-endian</b>, as required by the PostgreSQL
+     * wire protocol.
      *
      * @throws UnsupportedOperationException if binary encoding is not
-     *         implemented for this type
+     * implemented for this type
      */
     default byte[] encode(A value) {
         throw new UnsupportedOperationException("Binary encoding not implemented for type: " + name());
@@ -159,18 +167,20 @@ public interface Codec<A> {
     /**
      * Decodes a value from the PostgreSQL binary wire format.
      *
-     * <p>{@code buf} must be a big-endian {@link ByteBuffer} positioned at the
-     * first byte of the value's payload.  {@code length} is the number of
-     * bytes that make up the payload (as read from the preceding
-     * {@code int32} length header).  The method advances the buffer position
-     * by exactly {@code length} bytes.
+     * <p>
+     * {@code buf} must be a big-endian {@link ByteBuffer} positioned at the
+     * first byte of the value's payload. {@code length} is the number of bytes
+     * that make up the payload (as read from the preceding {@code int32} length
+     * header). The method advances the buffer position by exactly
+     * {@code length} bytes.
      *
-     * <p>NULL handling ({@code length == -1}) must be performed by the caller
+     * <p>
+     * NULL handling ({@code length == -1}) must be performed by the caller
      * before invoking this method.
      *
      * @throws ParseException if the binary data is malformed
      * @throws UnsupportedOperationException if binary decoding is not
-     *         implemented for this type
+     * implemented for this type
      */
     default A decodeBinary(ByteBuffer buf, int length) throws ParseException {
         throw new UnsupportedOperationException("Binary decoding not implemented for type: " + name());
@@ -179,7 +189,6 @@ public interface Codec<A> {
     // -----------------------------------------------------------------------
     // Result / exception types
     // -----------------------------------------------------------------------
-
     final class ParsingResult<A> {
 
         public final A value;

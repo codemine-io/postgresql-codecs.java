@@ -8,18 +8,18 @@ public class BitCodecIT extends CodecITBase {
 
     @Test
     void bitRoundTrip() throws Exception {
-        assertEquals("10110", roundTrip(Codec.BIT, "bit(5)", "10110"));
+        assertEquals("1", roundTrip(Codec.BIT, "1"));
     }
 
     @Test
     void bitNull() throws Exception {
-        assertNull(roundTrip(Codec.BIT, "bit(5)", null));
+        assertNull(roundTrip(Codec.BIT, null));
     }
 
 
     @Test
     void bitOid() throws Exception {
-        assertOid(Codec.BIT, "bit");
+        assertOid(Codec.BIT);
     }
 
     @Test

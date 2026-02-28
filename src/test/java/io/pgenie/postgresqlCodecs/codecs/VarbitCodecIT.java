@@ -8,18 +8,18 @@ public class VarbitCodecIT extends CodecITBase {
 
     @Test
     void varbitRoundTrip() throws Exception {
-        assertEquals("1011010", roundTrip(Codec.VARBIT, "varbit", "1011010"));
+        assertEquals("1011010", roundTrip(Codec.VARBIT, "1011010"));
     }
 
     @Test
     void varbitNull() throws Exception {
-        assertNull(roundTrip(Codec.VARBIT, "varbit", null));
+        assertNull(roundTrip(Codec.VARBIT, null));
     }
 
 
     @Test
     void varbitOid() throws Exception {
-        assertOid(Codec.VARBIT, "varbit");
+        assertOid(Codec.VARBIT);
     }
 
     @Test

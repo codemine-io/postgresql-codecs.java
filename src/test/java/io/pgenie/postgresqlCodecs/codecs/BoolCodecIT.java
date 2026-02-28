@@ -8,23 +8,23 @@ public class BoolCodecIT extends CodecITBase {
 
     @Test
     void boolTrue() throws Exception {
-        assertEquals(true, roundTrip(Codec.BOOL, "bool", true));
+        assertEquals(true, roundTrip(Codec.BOOL, true));
     }
 
     @Test
     void boolFalse() throws Exception {
-        assertEquals(false, roundTrip(Codec.BOOL, "bool", false));
+        assertEquals(false, roundTrip(Codec.BOOL, false));
     }
 
     @Test
     void boolNull() throws Exception {
-        assertNull(roundTrip(Codec.BOOL, "bool", null));
+        assertNull(roundTrip(Codec.BOOL, null));
     }
 
 
     @Test
     void boolOid() throws Exception {
-        assertOid(Codec.BOOL, "bool");
+        assertOid(Codec.BOOL);
     }
 
     @Test

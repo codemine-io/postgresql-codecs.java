@@ -8,14 +8,14 @@ public class BoxCodecIT extends CodecITBase {
     @Test
     void boxRoundTrip() throws Exception {
         var box = new org.postgresql.geometric.PGbox(3.0, 4.0, 1.0, 2.0);
-        var result = roundTrip(Codec.BOX, "box", box);
+        var result = roundTrip(Codec.BOX, box);
         assertNotNull(result);
     }
 
 
     @Test
     void boxOid() throws Exception {
-        assertOid(Codec.BOX, "box");
+        assertOid(Codec.BOX);
     }
 
     @Test

@@ -6,6 +6,6 @@ public class LineCodecIT extends CodecITBase {
 
     @Test
     void lineOid() throws Exception {
-        assertOid(Codec.LINE, "line");
+        assertOid(Codec.LINE);
     }
 }

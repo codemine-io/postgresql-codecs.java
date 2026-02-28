@@ -12,19 +12,19 @@ public class TimestamptzCodecIT extends CodecITBase {
     @Test
     void timestamptzRoundTrip() throws Exception {
         var ts = OffsetDateTime.of(2024, 6, 15, 14, 30, 45, 0, ZoneOffset.UTC);
-        var result = roundTrip(Codec.TIMESTAMPTZ, "timestamptz", ts);
+        var result = roundTrip(Codec.TIMESTAMPTZ, ts);
         assertEquals(ts.toInstant(), result.toInstant());
     }
 
     @Test
     void timestamptzNull() throws Exception {
-        assertNull(roundTrip(Codec.TIMESTAMPTZ, "timestamptz", null));
+        assertNull(roundTrip(Codec.TIMESTAMPTZ, null));
     }
 
 
     @Test
     void timestamptzOid() throws Exception {
-        assertOid(Codec.TIMESTAMPTZ, "timestamptz");
+        assertOid(Codec.TIMESTAMPTZ);
     }
 
     @Test

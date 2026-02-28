@@ -7,6 +7,6 @@ public class VarcharCodecIT extends CodecITBase {
 
     @Test
     void varcharRoundTrip() throws Exception {
-        assertEquals("hello", roundTrip(Codec.VARCHAR, "varchar", "hello"));
+        assertEquals("hello", roundTrip(Codec.VARCHAR, "hello"));
     }
 }

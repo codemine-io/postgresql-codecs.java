@@ -13,19 +13,22 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.postgresql.copy.CopyManager;
 import org.postgresql.core.BaseConnection;
+import org.postgresql.util.PGobject;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 /**
  * Base class for codec integration tests. Provides a shared PostgreSQL
  * container and a single reused JDBC connection for all tests.
  *
- * <p>Both the container and the connection are started once per JVM via a
- * static initializer and cleaned up automatically by the TestContainers
- * resource reaper (Ryuk) on JVM exit.
+ * <p>
+ * Both the container and the connection are started once per JVM via a static
+ * initializer and cleaned up automatically by the TestContainers resource
+ * reaper (Ryuk) on JVM exit.
  *
- * <p>Reusing a single connection across tests avoids the overhead of TCP
- * handshake and PostgreSQL session setup on every round-trip, which is the
- * dominant cost when running many property-based tests.
+ * <p>
+ * Reusing a single connection across tests avoids the overhead of TCP handshake
+ * and PostgreSQL session setup on every round-trip, which is the dominant cost
+ * when running many property-based tests.
  */
 abstract class CodecITBase {
 
@@ -81,20 +84,6 @@ abstract class CodecITBase {
         }
     }
 
-    /**
-     * Helper for types where we just check string equality of results (useful
-     * when the Java type doesn't have a natural equals, like byte[]).
-     */
-    <A> String roundTripText(Codec<A> codec, String castType, A value) throws Exception {
-        try (var ps = conn.prepareStatement("SELECT ?::" + castType)) {
-            codec.bind(ps, 1, value);
-            try (ResultSet rs = ps.executeQuery()) {
-                assertTrue(rs.next(), "Expected a result row");
-                return rs.getString(1);
-            }
-        }
-    }
-
     // -----------------------------------------------------------------------
     // Binary helpers
     // -----------------------------------------------------------------------
@@ -113,7 +102,18 @@ abstract class CodecITBase {
             s.execute("CREATE TEMP TABLE _bce (v " + pgType + ")");
         }
         try (var ps = conn.prepareStatement("INSERT INTO _bce VALUES (?)")) {
-            codec.bind(ps, 1, value);
+            if (value != null) {
+                PGobject obj = new PGobject();
+                obj.setType(codec.typeSig());
+                {
+                    StringBuilder sb = new StringBuilder();
+                    codec.write(sb, value);
+                    obj.setValue(sb.toString());
+                }
+                ps.setObject(1, obj);
+            } else {
+                ps.setNull(1, java.sql.Types.OTHER);
+            }
             ps.execute();
         }
         var cm = new CopyManager(conn.unwrap(BaseConnection.class));

@@ -2,12 +2,7 @@ package io.pgenie.postgresqlcodecs.types;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.sql.Types;
 import java.util.Random;
-
-import org.postgresql.util.PGobject;
 
 import io.pgenie.postgresqlcodecs.codecs.Codec;
 

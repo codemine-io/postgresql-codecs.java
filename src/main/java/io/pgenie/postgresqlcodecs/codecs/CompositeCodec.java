@@ -2,11 +2,7 @@ package io.pgenie.postgresqlcodecs.codecs;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.function.Function;
-
-import org.postgresql.util.PGobject;
 
 /**
  * Codec for PostgreSQL composite (row) types.
@@ -284,18 +280,6 @@ public final class CompositeCodec<Z> implements Codec<Z> {
             }
         }
         sb.append(')');
-    }
-
-    @Override
-    public void bind(PreparedStatement ps, int index, Z value) throws SQLException {
-        PGobject obj = new PGobject();
-        obj.setType(this.name());
-        if (value != null) {
-            var sb = new StringBuilder();
-            this.write(sb, value);
-            obj.setValue(sb.toString());
-        }
-        ps.setObject(index, obj);
     }
 
     // ---------------------------------------------------------------------------

@@ -25,6 +25,10 @@ public interface Codec<A> {
     // -----------------------------------------------------------------------
     // Type metadata
     // -----------------------------------------------------------------------
+    /**
+     * Returns the PostgreSQL schema name for this type, or empty string or
+     * {@code null} if the type is in the default search path.
+     */
     default String schema() {
         return "";
     }
@@ -34,6 +38,9 @@ public interface Codec<A> {
      */
     String name();
 
+    /**
+     * Returns the full PostgreSQL type signature, including schema if applicable.
+     */
     default String typeSig() {
         String schema = schema();
         return schema == null || schema.isEmpty() ? name() : schema + "." + name();

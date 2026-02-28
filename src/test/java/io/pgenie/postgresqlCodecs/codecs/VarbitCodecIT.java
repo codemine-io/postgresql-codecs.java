@@ -6,18 +6,20 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import io.pgenie.postgresqlCodecs.types.Varbit;
+
 public class VarbitCodecIT extends CodecITBase {
 
     @Test
     void varbitRoundTrip() throws Exception {
-        assertEquals("1011010", roundTrip(Codec.VARBIT, "1011010"));
+        var varbit = Varbit.fromBitString("1011010");
+        assertEquals(varbit, roundTrip(Codec.VARBIT, varbit));
     }
 
     @Test
     void varbitNull() throws Exception {
         assertNull(roundTrip(Codec.VARBIT, null));
     }
-
 
     @Test
     void varbitOid() throws Exception {
@@ -26,7 +28,7 @@ public class VarbitCodecIT extends CodecITBase {
 
     @Test
     void varbitBinary() throws Exception {
-        String value = "10110";
+        var value = Varbit.fromBitString("10110");
         byte[] pgBytes = pgBinaryBytes(Codec.VARBIT, "varbit", value);
         assertEquals(hex(pgBytes), hex(Codec.VARBIT.encode(value)));
         assertEquals(value, Codec.VARBIT.decodeBinary(wrap(pgBytes), pgBytes.length));
@@ -34,13 +36,13 @@ public class VarbitCodecIT extends CodecITBase {
 
     @ParameterizedTest
     @MethodSource("io.pgenie.postgresqlCodecs.codecs.Generators#varbits")
-    void varbitPropertyRoundTrip(String value) throws Exception {
+    void varbitPropertyRoundTrip(Varbit value) throws Exception {
         assertEquals(value, roundTrip(Codec.VARBIT, value));
     }
 
     @ParameterizedTest
     @MethodSource("io.pgenie.postgresqlCodecs.codecs.Generators#varbits")
-    void varbitPropertyBinaryRoundTrip(String value) throws Exception {
+    void varbitPropertyBinaryRoundTrip(Varbit value) throws Exception {
         assertBinaryRoundTrip(Codec.VARBIT, "varbit", value);
     }
 

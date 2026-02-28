@@ -1,6 +1,13 @@
 package io.pgenie.postgresqlCodecs.codecs;
 
-import com.pholser.junit.quickcheck.random.SourceOfRandomness;
+import io.pgenie.postgresqlCodecs.types.Bit;
+import io.pgenie.postgresqlCodecs.types.Cidr;
+import io.pgenie.postgresqlCodecs.types.Inet;
+import io.pgenie.postgresqlCodecs.types.Interval;
+import io.pgenie.postgresqlCodecs.types.Macaddr;
+import io.pgenie.postgresqlCodecs.types.Macaddr8;
+import io.pgenie.postgresqlCodecs.types.Tsvector;
+import io.pgenie.postgresqlCodecs.types.Varbit;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -8,7 +15,6 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.OffsetTime;
 import java.time.ZoneOffset;
-import java.util.ArrayList;
 import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -29,6 +35,10 @@ import org.postgresql.geometric.PGpolygon;
  * randomly-generated values that cover the full valid range of the
  * corresponding PostgreSQL type.
  *
+ * <p>Generation logic for complex types (network, bit-string, interval, tsvector)
+ * is delegated to the associated type class in the {@code main} source tree so
+ * that downstream users can reuse the same generators in their own property tests.
+ *
  * <p>Analogous to the {@code Arbitrary} instances in the Haskell
  * <a href="https://github.com/nikita-volkov/postgresql-types">postgresql-types</a>
  * library.
@@ -45,22 +55,9 @@ public final class Generators {
     private static final long DATE_AD_EPOCH_DAY = LocalDate.of(1, 1, 1).toEpochDay();
 
     // PostgreSQL timestamp range: 4713 BC to 294276 AD (stored as microseconds since PG epoch).
-    // PG epoch = 2000-01-01 00:00:00 UTC.
-    // Min micros offset from PG epoch: -210866803200000000 (4713 BC Jan 1)
-    // Max micros offset from PG epoch: 9214646400000000 (294276 AD Dec 31)
-    // We use the same epoch-day bounds for date part and full micro precision for time.
-    private static final long TIMESTAMP_MIN_EPOCH_DAY = DATE_MIN_EPOCH_DAY;
     private static final long TIMESTAMP_MAX_EPOCH_DAY = LocalDate.of(294276, 12, 31).toEpochDay();
 
     private Generators() {
-    }
-
-    // -----------------------------------------------------------------------
-    // Helpers
-    // -----------------------------------------------------------------------
-
-    private static SourceOfRandomness rng() {
-        return new SourceOfRandomness(new Random());
     }
 
     // -----------------------------------------------------------------------
@@ -69,7 +66,7 @@ public final class Generators {
 
     /** Arbitrary {@code bool} values. */
     public static Stream<Arguments> booleans() {
-        var r = rng();
+        var r = new Random();
         return Stream.generate(() -> Arguments.of(r.nextBoolean())).limit(COUNT);
     }
 
@@ -79,21 +76,20 @@ public final class Generators {
 
     /** Arbitrary {@code int2} values covering the full [-32768, 32767] range. */
     public static Stream<Arguments> int2s() {
-        var r = rng();
-        return Stream.generate(() -> Arguments.of(r.nextShort(Short.MIN_VALUE, Short.MAX_VALUE))).limit(COUNT);
+        var r = new Random();
+        return Stream.generate(() -> Arguments.of((short) r.nextInt(Short.MIN_VALUE, (int) Short.MAX_VALUE + 1))).limit(COUNT);
     }
 
     /** Arbitrary {@code int4} values covering the full 32-bit signed integer range. */
     public static Stream<Arguments> int4s() {
-        // Use Random.nextInt() to uniformly cover the full range including MIN/MAX.
-        var rnd = new Random();
-        return Stream.generate(() -> Arguments.of(rnd.nextInt())).limit(COUNT);
+        var r = new Random();
+        return Stream.generate(() -> Arguments.of(r.nextInt())).limit(COUNT);
     }
 
     /** Arbitrary {@code int8} values covering the full 64-bit signed integer range. */
     public static Stream<Arguments> int8s() {
-        var rnd = new Random();
-        return Stream.generate(() -> Arguments.of(rnd.nextLong())).limit(COUNT);
+        var r = new Random();
+        return Stream.generate(() -> Arguments.of(r.nextLong())).limit(COUNT);
     }
 
     // -----------------------------------------------------------------------
@@ -104,15 +100,14 @@ public final class Generators {
      * Arbitrary finite {@code float4} values.
      *
      * <p>NaN and ±Infinity are excluded because {@code NaN != NaN} under
-     * {@link Float#equals}; the existing fixed tests cover those special
-     * values explicitly.
+     * {@link Float#equals}; the existing fixed tests cover those special values.
      */
     public static Stream<Arguments> float4s() {
-        var rnd = new Random();
+        var r = new Random();
         return Stream.generate(() -> {
             float v;
             do {
-                v = Float.intBitsToFloat(rnd.nextInt());
+                v = Float.intBitsToFloat(r.nextInt());
             } while (!Float.isFinite(v));
             return Arguments.of(v);
         }).limit(COUNT);
@@ -122,15 +117,14 @@ public final class Generators {
      * Arbitrary finite {@code float8} values.
      *
      * <p>NaN and ±Infinity are excluded because {@code NaN != NaN} under
-     * {@link Double#equals}; the existing fixed tests cover those special
-     * values explicitly.
+     * {@link Double#equals}; the existing fixed tests cover those special values.
      */
     public static Stream<Arguments> float8s() {
-        var rnd = new Random();
+        var r = new Random();
         return Stream.generate(() -> {
             double v;
             do {
-                v = Double.longBitsToDouble(rnd.nextLong());
+                v = Double.longBitsToDouble(r.nextLong());
             } while (!Double.isFinite(v));
             return Arguments.of(v);
         }).limit(COUNT);
@@ -147,21 +141,21 @@ public final class Generators {
      * and negative values.
      */
     public static Stream<Arguments> numerics() {
-        var r = rng();
+        var r = new Random();
         return Stream.generate(() -> {
             boolean negative = r.nextBoolean();
             int intDigits = r.nextInt(0, 10);
             int fracDigits = r.nextInt(0, 7);
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             if (negative) sb.append('-');
             for (int i = 0; i < intDigits; i++) {
-                sb.append((char) ('0' + r.nextInt(0, 9)));
+                sb.append((char) ('0' + r.nextInt(0, 10)));
             }
             if (intDigits == 0) sb.append('0');
             if (fracDigits > 0) {
                 sb.append('.');
                 for (int i = 0; i < fracDigits; i++) {
-                    sb.append((char) ('0' + r.nextInt(0, 9)));
+                    sb.append((char) ('0' + r.nextInt(0, 10)));
                 }
                 // Ensure at least one non-zero fractional digit to preserve scale
                 if (sb.toString().matches("-?0+\\.0+")) {
@@ -181,43 +175,35 @@ public final class Generators {
      * character ({@code '\0'}), which PostgreSQL does not allow in text.
      */
     public static Stream<Arguments> texts() {
-        var r = rng();
+        var r = new Random();
         return Stream.generate(() -> Arguments.of(arbitraryText(r, 50))).limit(COUNT);
     }
 
     /** Arbitrary {@code varchar} values (same constraints as {@code text}). */
     public static Stream<Arguments> varchars() {
-        var r = rng();
+        var r = new Random();
         return Stream.generate(() -> Arguments.of(arbitraryText(r, 50))).limit(COUNT);
     }
 
     /**
-     * Arbitrary {@code char(1)} values — single non-NUL characters.
+     * Arbitrary {@code char(1)} values — single printable ASCII characters.
      *
      * <p>PostgreSQL {@code char} is blank-padded; a single-character string
      * is the natural unit here.
      */
     public static Stream<Arguments> chars() {
-        var r = rng();
-        return Stream.generate(() -> {
-            char c;
-            do {
-                // Limit to printable ASCII to avoid blank-padding round-trip surprises
-                // with multi-byte Unicode in a fixed-length char(1) context.
-                c = r.nextChar('!', '~');
-            } while (c == '\0');
-            return Arguments.of(String.valueOf(c));
-        }).limit(COUNT);
+        var r = new Random();
+        return Stream.generate(() -> Arguments.of(String.valueOf((char) ('!' + r.nextInt(0, '~' - '!' + 1))))).limit(COUNT);
     }
 
-    private static String arbitraryText(SourceOfRandomness r, int maxLen) {
-        int len = r.nextInt(0, maxLen);
+    private static String arbitraryText(Random r, int maxLen) {
+        int len = r.nextInt(0, maxLen + 1);
         var sb = new StringBuilder(len);
         for (int i = 0; i < len; i++) {
             char c;
             do {
                 // Generate printable Unicode BMP characters excluding surrogates and NUL.
-                c = r.nextChar('\u0001', '\uD7FF');
+                c = (char) (1 + r.nextInt(0, 0xD7FF));
             } while (c == '\0');
             sb.append(c);
         }
@@ -230,13 +216,10 @@ public final class Generators {
 
     /** Arbitrary {@code bytea} values (random byte arrays). */
     public static Stream<Arguments> byteas() {
-        var r = rng();
+        var r = new Random();
         return Stream.generate(() -> {
-            int len = r.nextInt(0, 100);
-            byte[] bytes = new byte[len];
-            for (int i = 0; i < len; i++) {
-                bytes[i] = r.nextByte(Byte.MIN_VALUE, Byte.MAX_VALUE);
-            }
+            byte[] bytes = new byte[r.nextInt(0, 101)];
+            r.nextBytes(bytes);
             return Arguments.of((Object) bytes);
         }).limit(COUNT);
     }
@@ -248,14 +231,13 @@ public final class Generators {
     /**
      * Arbitrary {@code date} values spanning the full PostgreSQL range (4713 BC to 5874897 AD).
      *
-     * <p>Use this generator for binary round-trip tests.  For text round-trip
-     * tests use {@link #datesAD()} which restricts to AD dates to avoid JDBC
-     * binding limitations for BC dates.
+     * <p>Use for binary round-trip tests. For text round-trip tests use {@link #datesAD()}
+     * which restricts to AD dates to avoid JDBC binding limitations for BC dates.
      */
     public static Stream<Arguments> dates() {
-        var r = rng();
+        var r = new Random();
         return Stream.generate(() -> {
-            long day = r.nextLong(DATE_MIN_EPOCH_DAY, DATE_MAX_EPOCH_DAY);
+            long day = DATE_MIN_EPOCH_DAY + (long) (r.nextDouble() * (DATE_MAX_EPOCH_DAY - DATE_MIN_EPOCH_DAY));
             return Arguments.of(LocalDate.ofEpochDay(day));
         }).limit(COUNT);
     }
@@ -264,12 +246,12 @@ public final class Generators {
      * Arbitrary AD-only {@code date} values (year 1 AD to 5874897 AD).
      *
      * <p>Restricts to AD dates to avoid JDBC binding issues with BC dates in
-     * {@code ps.setDate(Date.valueOf(bcDate))}.  Use for text round-trip tests.
+     * {@code ps.setDate(Date.valueOf(bcDate))}. Use for text round-trip tests.
      */
     public static Stream<Arguments> datesAD() {
-        var r = rng();
+        var r = new Random();
         return Stream.generate(() -> {
-            long day = r.nextLong(DATE_AD_EPOCH_DAY, DATE_MAX_EPOCH_DAY);
+            long day = DATE_AD_EPOCH_DAY + (long) (r.nextDouble() * (DATE_MAX_EPOCH_DAY - DATE_AD_EPOCH_DAY));
             return Arguments.of(LocalDate.ofEpochDay(day));
         }).limit(COUNT);
     }
@@ -279,10 +261,9 @@ public final class Generators {
      * ({@code 00:00:00} to {@code 23:59:59.999999}).
      */
     public static Stream<Arguments> times() {
-        var r = rng();
-        // Max microseconds in a day: 86399_999999
+        var r = new Random();
         return Stream.generate(() -> {
-            long micros = r.nextLong(0L, 86_399_999_999L);
+            long micros = (long) (r.nextDouble() * 86_399_999_999L);
             return Arguments.of(LocalTime.ofNanoOfDay(micros * 1_000L));
         }).limit(COUNT);
     }
@@ -292,12 +273,12 @@ public final class Generators {
      * paired with a UTC offset in the range [−15:00:00, +15:00:00].
      */
     public static Stream<Arguments> timetzes() {
-        var r = rng();
+        var r = new Random();
         return Stream.generate(() -> {
-            long micros = r.nextLong(0L, 86_399_999_999L);
+            long micros = (long) (r.nextDouble() * 86_399_999_999L);
             LocalTime lt = LocalTime.ofNanoOfDay(micros * 1_000L);
             // Offsets must be whole seconds; range ±54000 s (= ±15 h).
-            int tzSecs = r.nextInt(-54_000, 54_000);
+            int tzSecs = r.nextInt(-54_000, 54_001);
             ZoneOffset tz = ZoneOffset.ofTotalSeconds(tzSecs);
             return Arguments.of(lt.atOffset(tz));
         }).limit(COUNT);
@@ -307,14 +288,15 @@ public final class Generators {
      * Arbitrary {@code timestamp} values spanning PostgreSQL's documented range:
      * 4713 BC to 294276 AD, with microsecond precision.
      *
-     * <p>Use this generator for binary round-trip tests.  For text round-trip
-     * tests use {@link #timestampsAD()} which restricts to AD dates.
+     * <p>Use for binary round-trip tests. For text round-trip tests use
+     * {@link #timestampsAD()} which restricts to AD dates.
      */
     public static Stream<Arguments> timestamps() {
-        var r = rng();
+        var r = new Random();
         return Stream.generate(() -> {
-            long epochDay = r.nextLong(TIMESTAMP_MIN_EPOCH_DAY, TIMESTAMP_MAX_EPOCH_DAY);
-            long micros = r.nextLong(0L, 86_399_999_999L);
+            long epochDay = DATE_MIN_EPOCH_DAY
+                    + (long) (r.nextDouble() * (TIMESTAMP_MAX_EPOCH_DAY - DATE_MIN_EPOCH_DAY));
+            long micros = (long) (r.nextDouble() * 86_399_999_999L);
             LocalDate date = LocalDate.ofEpochDay(epochDay);
             LocalTime time = LocalTime.ofNanoOfDay(micros * 1_000L);
             return Arguments.of(LocalDateTime.of(date, time));
@@ -325,13 +307,14 @@ public final class Generators {
      * Arbitrary AD-only {@code timestamp} values (year 1 AD to 294276 AD, microsecond precision).
      *
      * <p>Restricts to AD dates to avoid JDBC binding issues with BC dates in
-     * {@code ps.setTimestamp(Timestamp.valueOf(bcDateTime))}.  Use for text round-trip tests.
+     * {@code ps.setTimestamp(Timestamp.valueOf(bcDateTime))}. Use for text round-trip tests.
      */
     public static Stream<Arguments> timestampsAD() {
-        var r = rng();
+        var r = new Random();
         return Stream.generate(() -> {
-            long epochDay = r.nextLong(DATE_AD_EPOCH_DAY, TIMESTAMP_MAX_EPOCH_DAY);
-            long micros = r.nextLong(0L, 86_399_999_999L);
+            long epochDay = DATE_AD_EPOCH_DAY
+                    + (long) (r.nextDouble() * (TIMESTAMP_MAX_EPOCH_DAY - DATE_AD_EPOCH_DAY));
+            long micros = (long) (r.nextDouble() * 86_399_999_999L);
             LocalDate date = LocalDate.ofEpochDay(epochDay);
             LocalTime time = LocalTime.ofNanoOfDay(micros * 1_000L);
             return Arguments.of(LocalDateTime.of(date, time));
@@ -339,19 +322,17 @@ public final class Generators {
     }
 
     /**
-     * Arbitrary {@code timestamptz} values normalised to UTC, since PostgreSQL
-     * stores {@code timestamptz} as a UTC instant and the binary decoder returns
-     * a UTC {@link OffsetDateTime}. Equality-based round-trip assertions
-     * therefore require UTC input values.
+     * Arbitrary UTC {@code timestamptz} values spanning PostgreSQL's full range.
      *
-     * <p>Use this generator for binary round-trip tests.  For text round-trip
-     * tests use {@link #timestamptzADs()} which restricts to AD dates.
+     * <p>Use for binary round-trip tests. For text round-trip tests use
+     * {@link #timestamptzADs()} which restricts to AD dates.
      */
     public static Stream<Arguments> timestamptzs() {
-        var r = rng();
+        var r = new Random();
         return Stream.generate(() -> {
-            long epochDay = r.nextLong(TIMESTAMP_MIN_EPOCH_DAY, TIMESTAMP_MAX_EPOCH_DAY);
-            long micros = r.nextLong(0L, 86_399_999_999L);
+            long epochDay = DATE_MIN_EPOCH_DAY
+                    + (long) (r.nextDouble() * (TIMESTAMP_MAX_EPOCH_DAY - DATE_MIN_EPOCH_DAY));
+            long micros = (long) (r.nextDouble() * 86_399_999_999L);
             LocalDate date = LocalDate.ofEpochDay(epochDay);
             LocalTime time = LocalTime.ofNanoOfDay(micros * 1_000L);
             return Arguments.of(LocalDateTime.of(date, time).atOffset(ZoneOffset.UTC));
@@ -361,15 +342,14 @@ public final class Generators {
     /**
      * Arbitrary AD-only UTC {@code timestamptz} values (year 1 AD to 294276 AD).
      *
-     * <p>Restricts to AD dates to avoid JDBC binding issues with BC dates in
-     * {@code ps.setObject(bcOffsetDateTime, TIMESTAMP_WITH_TIMEZONE)}.
-     * Use for text round-trip tests.
+     * <p>Restricts to AD dates to avoid JDBC binding issues. Use for text round-trip tests.
      */
     public static Stream<Arguments> timestamptzADs() {
-        var r = rng();
+        var r = new Random();
         return Stream.generate(() -> {
-            long epochDay = r.nextLong(DATE_AD_EPOCH_DAY, TIMESTAMP_MAX_EPOCH_DAY);
-            long micros = r.nextLong(0L, 86_399_999_999L);
+            long epochDay = DATE_AD_EPOCH_DAY
+                    + (long) (r.nextDouble() * (TIMESTAMP_MAX_EPOCH_DAY - DATE_AD_EPOCH_DAY));
+            long micros = (long) (r.nextDouble() * 86_399_999_999L);
             LocalDate date = LocalDate.ofEpochDay(epochDay);
             LocalTime time = LocalTime.ofNanoOfDay(micros * 1_000L);
             return Arguments.of(LocalDateTime.of(date, time).atOffset(ZoneOffset.UTC));
@@ -382,9 +362,8 @@ public final class Generators {
 
     /** Arbitrary {@code uuid} values (random 128-bit UUIDs). */
     public static Stream<Arguments> uuids() {
-        var rnd = new Random();
-        return Stream.generate(() -> Arguments.of(
-                new UUID(rnd.nextLong(), rnd.nextLong()))).limit(COUNT);
+        var r = new Random();
+        return Stream.generate(() -> Arguments.of(new UUID(r.nextLong(), r.nextLong()))).limit(COUNT);
     }
 
     // -----------------------------------------------------------------------
@@ -393,134 +372,48 @@ public final class Generators {
 
     /** Arbitrary {@code oid} values in the PostgreSQL valid range [0, 2³²−1]. */
     public static Stream<Arguments> oids() {
-        var r = rng();
-        return Stream.generate(() -> Arguments.of(
-                r.nextLong(0L, 4_294_967_295L))).limit(COUNT);
+        var r = new Random();
+        return Stream.generate(() -> Arguments.of(r.nextLong(0L, 4_294_967_296L))).limit(COUNT);
     }
 
     // -----------------------------------------------------------------------
-    // Network address types
+    // Network address types — generation logic delegated to main-code types
     // -----------------------------------------------------------------------
 
     /**
      * Arbitrary {@code inet} values covering both IPv4 and IPv6 addresses.
-     *
-     * <p>IPv4 addresses use masks 0–32; IPv6 addresses use masks 0–128.
+     * Delegates to {@link Inet#generate(Random)}.
      */
     public static Stream<Arguments> inets() {
-        var r = rng();
-        return Stream.generate(() -> Arguments.of(arbitraryInet(r))).limit(COUNT);
-    }
-
-    /**
-     * Arbitrary IPv4 {@code inet} values with a canonical mask.
-     *
-     * <p>IPv4-only variant used for binary round-trip tests because the binary
-     * decoder emits the compressed canonical form; IPv4 addresses are already in
-     * canonical form and do not require compression.
-     */
-    public static Stream<Arguments> inetIpv4s() {
-        var r = rng();
-        return Stream.generate(() -> {
-            int mask = r.nextInt(0, 32);
-            return Arguments.of(String.format("%d.%d.%d.%d/%d",
-                    r.nextInt(0, 255), r.nextInt(0, 255),
-                    r.nextInt(0, 255), r.nextInt(0, 255), mask));
-        }).limit(COUNT);
-    }
-
-    /**
-     * Arbitrary IPv4 {@code cidr} values with the host bits zeroed.
-     *
-     * <p>IPv4-only variant used for binary round-trip tests.
-     */
-    public static Stream<Arguments> cidrIpv4s() {
-        var r = rng();
-        return Stream.generate(() -> {
-            int mask = r.nextInt(0, 32);
-            int addr = r.nextInt(0, Integer.MAX_VALUE) & (int) (0xFFFFFFFFL << (32 - mask));
-            return Arguments.of(String.format("%d.%d.%d.%d/%d",
-                    (addr >> 24) & 0xFF, (addr >> 16) & 0xFF,
-                    (addr >> 8) & 0xFF, addr & 0xFF, mask));
-        }).limit(COUNT);
+        var r = new Random();
+        return Stream.generate(() -> Arguments.of(Inet.generate(r))).limit(COUNT);
     }
 
     /**
      * Arbitrary {@code cidr} values covering both IPv4 and IPv6 network prefixes.
+     * Delegates to {@link Cidr#generate(Random)}.
      */
     public static Stream<Arguments> cidrs() {
-        var r = rng();
-        return Stream.generate(() -> Arguments.of(arbitraryCidr(r))).limit(COUNT);
+        var r = new Random();
+        return Stream.generate(() -> Arguments.of(Cidr.generate(r))).limit(COUNT);
     }
 
-    /** Arbitrary {@code macaddr} values (six colon-separated hex bytes). */
+    /**
+     * Arbitrary {@code macaddr} values.
+     * Delegates to {@link Macaddr#generate(Random)}.
+     */
     public static Stream<Arguments> macaddrs() {
-        var r = rng();
-        return Stream.generate(() -> {
-            byte[] b = new byte[6];
-            for (int i = 0; i < 6; i++) b[i] = r.nextByte(Byte.MIN_VALUE, Byte.MAX_VALUE);
-            return Arguments.of(String.format("%02x:%02x:%02x:%02x:%02x:%02x",
-                    b[0] & 0xFF, b[1] & 0xFF, b[2] & 0xFF,
-                    b[3] & 0xFF, b[4] & 0xFF, b[5] & 0xFF));
-        }).limit(COUNT);
+        var r = new Random();
+        return Stream.generate(() -> Arguments.of(Macaddr.generate(r))).limit(COUNT);
     }
 
-    /** Arbitrary {@code macaddr8} values (eight colon-separated hex bytes). */
+    /**
+     * Arbitrary {@code macaddr8} values.
+     * Delegates to {@link Macaddr8#generate(Random)}.
+     */
     public static Stream<Arguments> macaddr8s() {
-        var r = rng();
-        return Stream.generate(() -> {
-            byte[] b = new byte[8];
-            for (int i = 0; i < 8; i++) b[i] = r.nextByte(Byte.MIN_VALUE, Byte.MAX_VALUE);
-            return Arguments.of(String.format("%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x",
-                    b[0] & 0xFF, b[1] & 0xFF, b[2] & 0xFF, b[3] & 0xFF,
-                    b[4] & 0xFF, b[5] & 0xFF, b[6] & 0xFF, b[7] & 0xFF));
-        }).limit(COUNT);
-    }
-
-    private static String arbitraryInet(SourceOfRandomness r) {
-        if (r.nextBoolean()) {
-            // IPv4
-            return String.format("%d.%d.%d.%d/%d",
-                    r.nextInt(0, 255), r.nextInt(0, 255),
-                    r.nextInt(0, 255), r.nextInt(0, 255),
-                    r.nextInt(0, 32));
-        } else {
-            // IPv6
-            return String.format("%04x:%04x:%04x:%04x:%04x:%04x:%04x:%04x/%d",
-                    r.nextInt(0, 0xFFFF), r.nextInt(0, 0xFFFF),
-                    r.nextInt(0, 0xFFFF), r.nextInt(0, 0xFFFF),
-                    r.nextInt(0, 0xFFFF), r.nextInt(0, 0xFFFF),
-                    r.nextInt(0, 0xFFFF), r.nextInt(0, 0xFFFF),
-                    r.nextInt(0, 128));
-        }
-    }
-
-    private static String arbitraryCidr(SourceOfRandomness r) {
-        if (r.nextBoolean()) {
-            // IPv4 CIDR: mask bits determine how many host bits must be zero
-            int mask = r.nextInt(0, 32);
-            int addr = r.nextInt(0, (int) ((1L << (32 - mask)) - 1));
-            addr <<= (32 - mask);
-            return String.format("%d.%d.%d.%d/%d",
-                    (addr >> 24) & 0xFF, (addr >> 16) & 0xFF,
-                    (addr >> 8) & 0xFF, addr & 0xFF, mask);
-        } else {
-            // IPv6 CIDR: prefix bits, remaining bits zeroed
-            int mask = r.nextInt(0, 128);
-            int[] groups = new int[8];
-            int fullGroups = mask / 16;
-            int remainBits = mask % 16;
-            for (int i = 0; i < fullGroups; i++) {
-                groups[i] = r.nextInt(0, 0xFFFF);
-            }
-            if (fullGroups < 8 && remainBits > 0) {
-                int m = ((1 << remainBits) - 1) << (16 - remainBits);
-                groups[fullGroups] = r.nextInt(0, m) & m;
-            }
-            return String.format("%04x:%04x:%04x:%04x:%04x:%04x:%04x:%04x/%d",
-                    groups[0], groups[1], groups[2], groups[3],
-                    groups[4], groups[5], groups[6], groups[7], mask);
-        }
+        var r = new Random();
+        return Stream.generate(() -> Arguments.of(Macaddr8.generate(r))).limit(COUNT);
     }
 
     // -----------------------------------------------------------------------
@@ -529,7 +422,7 @@ public final class Generators {
 
     /** Arbitrary {@code point} values. */
     public static Stream<Arguments> points() {
-        var r = rng();
+        var r = new Random();
         return Stream.generate(() ->
                 Arguments.of(new PGpoint(r.nextDouble(-1e6, 1e6), r.nextDouble(-1e6, 1e6)))
         ).limit(COUNT);
@@ -541,7 +434,7 @@ public final class Generators {
      * <p>At least one of {@code a} or {@code b} must be non-zero.
      */
     public static Stream<Arguments> lines() {
-        var r = rng();
+        var r = new Random();
         return Stream.generate(() -> {
             double a, b;
             do {
@@ -559,7 +452,7 @@ public final class Generators {
 
     /** Arbitrary {@code lseg} values (line segments). */
     public static Stream<Arguments> lsegs() {
-        var r = rng();
+        var r = new Random();
         return Stream.generate(() -> {
             var p1 = new PGpoint(r.nextDouble(-1e6, 1e6), r.nextDouble(-1e6, 1e6));
             var p2 = new PGpoint(r.nextDouble(-1e6, 1e6), r.nextDouble(-1e6, 1e6));
@@ -569,7 +462,7 @@ public final class Generators {
 
     /** Arbitrary {@code box} values. */
     public static Stream<Arguments> boxes() {
-        var r = rng();
+        var r = new Random();
         return Stream.generate(() -> {
             double x1 = r.nextDouble(-1e6, 1e6), y1 = r.nextDouble(-1e6, 1e6);
             double x2 = r.nextDouble(-1e6, 1e6), y2 = r.nextDouble(-1e6, 1e6);
@@ -586,9 +479,9 @@ public final class Generators {
      * {@code ((x1,y1),...)}; open paths use {@code [(x1,y1),...]}.
      */
     public static Stream<Arguments> paths() {
-        var r = rng();
+        var r = new Random();
         return Stream.generate(() -> {
-            int n = r.nextInt(2, 5);
+            int n = r.nextInt(2, 6);
             boolean isOpen = r.nextBoolean();
             var pts = new PGpoint[n];
             for (int i = 0; i < n; i++) {
@@ -602,9 +495,9 @@ public final class Generators {
      * Arbitrary {@code polygon} values (2–5 vertices).
      */
     public static Stream<Arguments> polygons() {
-        var r = rng();
+        var r = new Random();
         return Stream.generate(() -> {
-            int n = r.nextInt(2, 5);
+            int n = r.nextInt(2, 6);
             var pts = new PGpoint[n];
             for (int i = 0; i < n; i++) {
                 pts[i] = new PGpoint(r.nextDouble(-1e4, 1e4), r.nextDouble(-1e4, 1e4));
@@ -620,43 +513,36 @@ public final class Generators {
      * (and the Haskell {@code Circle} Arbitrary instance).
      */
     public static Stream<Arguments> circles() {
-        var r = rng();
+        var r = new Random();
         return Stream.generate(() -> {
             double cx = r.nextDouble(-1e6, 1e6);
             double cy = r.nextDouble(-1e6, 1e6);
-            double radius = Math.abs(r.nextDouble(-1e6, 1e6));
+            double radius = Math.abs(r.nextDouble(0, 1e6));
             var center = new PGpoint(cx, cy);
             return Arguments.of(new PGcircle(center, radius));
         }).limit(COUNT);
     }
 
     // -----------------------------------------------------------------------
-    // Bit-string types
+    // Bit-string types — generation logic delegated to main-code types
     // -----------------------------------------------------------------------
 
     /**
      * Arbitrary {@code bit} values (fixed-length bit strings of 1–64 bits).
-     *
-     * <p>The length is fixed per value as PostgreSQL {@code bit(n)} is
-     * fixed-width; we vary {@code n} across samples.
+     * Delegates to {@link Bit#generate(Random)}.
      */
     public static Stream<Arguments> bits() {
-        var r = rng();
-        return Stream.generate(() -> Arguments.of(arbitraryBitString(r, r.nextInt(1, 64)))).limit(COUNT);
+        var r = new Random();
+        return Stream.generate(() -> Arguments.of(Bit.generate(r))).limit(COUNT);
     }
 
-    /** Arbitrary {@code varbit} values (variable-length bit strings, 0–64 bits). */
+    /**
+     * Arbitrary {@code varbit} values (variable-length bit strings, 0–64 bits).
+     * Delegates to {@link Varbit#generate(Random)}.
+     */
     public static Stream<Arguments> varbits() {
-        var r = rng();
-        return Stream.generate(() -> Arguments.of(arbitraryBitString(r, r.nextInt(0, 64)))).limit(COUNT);
-    }
-
-    private static String arbitraryBitString(SourceOfRandomness r, int len) {
-        var sb = new StringBuilder(len);
-        for (int i = 0; i < len; i++) {
-            sb.append(r.nextBoolean() ? '1' : '0');
-        }
-        return sb.toString();
+        var r = new Random();
+        return Stream.generate(() -> Arguments.of(Varbit.generate(r))).limit(COUNT);
     }
 
     // -----------------------------------------------------------------------
@@ -670,7 +556,7 @@ public final class Generators {
      * numbers, booleans, null) that are accepted by PostgreSQL.
      */
     public static Stream<Arguments> jsons() {
-        var r = rng();
+        var r = new Random();
         return Stream.generate(() -> Arguments.of(arbitraryJson(r))).limit(COUNT);
     }
 
@@ -678,11 +564,11 @@ public final class Generators {
         return jsons();
     }
 
-    private static String arbitraryJson(SourceOfRandomness r) {
-        return switch (r.nextInt(0, 4)) {
+    private static String arbitraryJson(Random r) {
+        return switch (r.nextInt(0, 3)) {
             case 0 -> {
                 // JSON object with 0–3 string keys
-                int n = r.nextInt(0, 3);
+                int n = r.nextInt(0, 4);
                 var sb = new StringBuilder("{");
                 for (int i = 0; i < n; i++) {
                     if (i > 0) sb.append(',');
@@ -695,7 +581,7 @@ public final class Generators {
             }
             case 1 -> {
                 // JSON array with 0–3 elements
-                int n = r.nextInt(0, 3);
+                int n = r.nextInt(0, 4);
                 var sb = new StringBuilder("[");
                 for (int i = 0; i < n; i++) {
                     if (i > 0) sb.append(',');
@@ -708,80 +594,48 @@ public final class Generators {
         };
     }
 
-    private static String arbitraryJsonScalar(SourceOfRandomness r) {
+    private static String arbitraryJsonScalar(Random r) {
         return switch (r.nextInt(0, 4)) {
             case 0 -> '"' + arbitraryAlpha(r, 0, 10) + '"';
-            case 1 -> String.valueOf(r.nextInt(-1000, 1000));
+            case 1 -> String.valueOf(r.nextInt(-1000, 1001));
             case 2 -> r.nextBoolean() ? "true" : "false";
             default -> "null";
         };
     }
 
-    private static String arbitraryAlpha(SourceOfRandomness r, int minLen, int maxLen) {
-        int len = r.nextInt(minLen, maxLen);
+    private static String arbitraryAlpha(Random r, int minLen, int maxLen) {
+        int len = r.nextInt(minLen, maxLen + 1);
         var sb = new StringBuilder(len);
         for (int i = 0; i < len; i++) {
-            sb.append(r.nextChar('a', 'z'));
+            sb.append((char) ('a' + r.nextInt(0, 26)));
         }
         return sb.toString();
     }
 
     // -----------------------------------------------------------------------
-    // Tsvector
+    // Tsvector — generation logic delegated to main-code type
     // -----------------------------------------------------------------------
 
     /**
-     * Arbitrary {@code tsvector} values in PostgreSQL's canonical form:
-     * a space-separated list of single-quoted lowercase lexemes.
-     *
-     * <p>We use the canonical quoted form so that the round-trip string
-     * comparison is stable.
+     * Arbitrary {@code tsvector} values (position-free, 1–4 lowercase lexemes).
+     * Delegates to {@link Tsvector#generate(Random)}.
      */
     public static Stream<Arguments> tsvectors() {
-        var r = rng();
-        return Stream.generate(() -> {
-            int n = r.nextInt(1, 5);
-            var lexemes = new ArrayList<String>(n);
-            for (int i = 0; i < n; i++) {
-                lexemes.add(arbitraryAlpha(r, 1, 10));
-            }
-            // Sort and deduplicate to produce the canonical tsvector form.
-            lexemes.sort(null);
-            var unique = lexemes.stream().distinct().toList();
-            var sb = new StringBuilder();
-            for (int i = 0; i < unique.size(); i++) {
-                if (i > 0) sb.append(' ');
-                sb.append('\'').append(unique.get(i)).append('\'');
-            }
-            return Arguments.of(sb.toString());
-        }).limit(COUNT);
+        var r = new Random();
+        return Stream.generate(() -> Arguments.of(Tsvector.generate(r))).limit(COUNT);
     }
 
     // -----------------------------------------------------------------------
-    // Interval
+    // Interval — generation logic delegated to main-code type
     // -----------------------------------------------------------------------
 
     /**
-     * Arbitrary {@code interval} values in PostgreSQL's verbose output format.
-     *
-     * <p>We generate intervals with at most one non-zero component so that the
-     * PostgreSQL round-trip is stable and the result string can be predicted.
+     * Arbitrary {@code interval} values spanning the full PostgreSQL interval range.
+     * Delegates to {@link Interval#generate(Random)}.
      */
     public static Stream<Arguments> intervals() {
-        var r = rng();
-        return Stream.generate(() -> {
-            // Pick one component to keep the format predictable.
-            int component = r.nextInt(0, 5);
-            int n = r.nextInt(0, 99);
-            String val = switch (component) {
-                case 0 -> n + " year" + (n == 1 ? "" : "s");
-                case 1 -> n + " mon" + (n == 1 ? "" : "s");
-                case 2 -> n + " day" + (n == 1 ? "" : "s");
-                case 3 -> String.format("%02d:00:00", n % 100);
-                default -> String.format("00:00:%02d", n % 60);
-            };
-            return Arguments.of(val);
-        }).limit(COUNT);
+        var r = new Random();
+        return Stream.generate(() -> Arguments.of(Interval.generate(r))).limit(COUNT);
     }
 
 }

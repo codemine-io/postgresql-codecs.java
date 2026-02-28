@@ -46,13 +46,6 @@
             <artifactId>postgresql</artifactId>
             <version>42.7.10</version>
         </dependency>
-
-        <dependency>
-            <groupId>com.pholser</groupId>
-            <artifactId>junit-quickcheck-generators</artifactId>
-            <version>1.0</version>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
 
     <build>

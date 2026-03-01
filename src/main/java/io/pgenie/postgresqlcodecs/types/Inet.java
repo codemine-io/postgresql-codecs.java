@@ -44,7 +44,7 @@ public sealed interface Inet permits Inet.V4, Inet.V6 {
         }
 
         @Override
-        public int oid() {
+        public int scalarOid() {
           return 869;
         }
 

@@ -185,7 +185,7 @@ abstract class CodecSuite<A> {
   // -----------------------------------------------------------------------
   @Test
   void oidMatchesName() throws Exception {
-    if (codec.oid() == 0) {
+    if (codec.scalarOid() == 0) {
       return;
     }
     try (var ps =
@@ -194,7 +194,7 @@ abstract class CodecSuite<A> {
       ps.setString(1, codec.name());
       try (ResultSet rs = ps.executeQuery()) {
         if (rs.next()) {
-          assertEquals(rs.getInt(1), codec.oid(), "OID mismatch for " + codec.name());
+          assertEquals(rs.getInt(1), codec.scalarOid(), "OID mismatch for " + codec.name());
         }
       }
     }
@@ -202,7 +202,7 @@ abstract class CodecSuite<A> {
 
   @Test
   void arrayOidMatchesName() throws Exception {
-    if (arrayCodec.oid() == 0) {
+    if (arrayCodec.arrayOid() == 0) {
       return;
     }
     // Array types in pg_type are named "_<element_name>".
@@ -212,7 +212,9 @@ abstract class CodecSuite<A> {
       try (ResultSet rs = ps.executeQuery()) {
         if (rs.next()) {
           assertEquals(
-              rs.getInt(1), arrayCodec.oid(), "Array OID mismatch for " + arrayCodec.typeSig());
+              rs.getInt(1),
+              arrayCodec.arrayOid(),
+              "Array OID mismatch for " + arrayCodec.typeSig());
         }
       }
     }

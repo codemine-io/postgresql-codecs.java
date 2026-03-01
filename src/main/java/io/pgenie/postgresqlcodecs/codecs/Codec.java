@@ -2,6 +2,7 @@ package io.pgenie.postgresqlcodecs.codecs;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.Random;
 import java.util.function.Function;
 
@@ -37,10 +38,35 @@ public interface Codec<A> {
   /** Returns the PostgreSQL type name (e.g. {@code "int4"}, {@code "text"}). */
   String name();
 
+  /**
+   * Returns the number of array dimensions for this codec. {@code 0} for scalar codecs; {@code n}
+   * for n-dimensional array codecs.
+   */
+  default int dimensions() {
+    return 0;
+  }
+
   /** Returns the full PostgreSQL type signature, including schema if applicable. */
   default String typeSig() {
-    String schema = schema();
-    return schema == null || schema.isEmpty() ? name() : schema + "." + name();
+    StringBuilder sb = new StringBuilder();
+    if (schema() != null && !schema().isEmpty()) {
+      sb.append(schema()).append(".");
+    }
+    sb.append(name());
+    for (int i = 0; i < dimensions(); i++) {
+      sb.append("[]");
+    }
+
+    return sb.toString();
+  }
+
+  /**
+   * Returns a new 1-D array codec whose element type is this codec. The returned codec uses
+   * PostgreSQL's array literal syntax ({@code {elem1,elem2,...}}) for text format and the standard
+   * binary array header for binary format.
+   */
+  default Codec<List<A>> inDim() {
+    return new ArrayCodec<>(this);
   }
 
   /**
@@ -50,13 +76,17 @@ public interface Codec<A> {
    * <p>The OID is used inside binary-format array and composite headers to tag each element with
    * its type.
    */
-  default int oid() {
+  default int scalarOid() {
     return 0;
   }
 
   /** Returns the PostgreSQL array-type OID for this element type, or {@code 0} if not known. */
   default int arrayOid() {
     return 0;
+  }
+
+  default int oid() {
+    return dimensions() > 0 ? arrayOid() : scalarOid();
   }
 
   default int jdbcType() {

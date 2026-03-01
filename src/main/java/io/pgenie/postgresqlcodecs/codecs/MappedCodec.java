@@ -22,8 +22,8 @@ final class MappedCodec<A, B> implements Codec<B> {
   }
 
   @Override
-  public int oid() {
-    return codec.oid();
+  public int scalarOid() {
+    return codec.scalarOid();
   }
 
   @Override

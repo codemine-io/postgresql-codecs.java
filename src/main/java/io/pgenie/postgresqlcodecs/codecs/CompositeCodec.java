@@ -263,7 +263,7 @@ public final class CompositeCodec<Z> implements Codec<Z> {
     for (var f : fields) {
       var field = (Field<Z, Object>) f;
       Object fieldValue = field.accessor.apply(value);
-      writeInt32(out, field.codec.oid());
+      writeInt32(out, field.codec.scalarOid());
       if (fieldValue == null) {
         writeInt32(out, -1);
       } else {

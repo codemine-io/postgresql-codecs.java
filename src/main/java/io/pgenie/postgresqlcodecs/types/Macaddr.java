@@ -30,7 +30,7 @@ public record Macaddr(byte b1, byte b2, byte b3, byte b4, byte b5, byte b6) {
         }
 
         @Override
-        public int oid() {
+        public int scalarOid() {
           return 829;
         }
 

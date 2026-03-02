@@ -142,10 +142,18 @@ public interface Codec<A> {
    * Convenience overload that encodes the value into a freshly-allocated byte array and returns it.
    * Delegates to {@link #encodeInBinary(Object, ByteArrayOutputStream)}.
    */
-  default byte[] encodeInBinary(A value) {
+  default byte[] encodeInBinaryAsByteArray(A value) {
     var out = new ByteArrayOutputStream();
     encodeInBinary(value, out);
     return out.toByteArray();
+  }
+
+  /**
+   * Convenience overload that encodes the value into a {@link ByteBuffer}. Delegates to {@link
+   * #encodeInBinaryAsByteArray(Object)}.
+   */
+  default ByteBuffer encodeInBinaryAsByteBuffer(A value) {
+    return ByteBuffer.wrap(encodeInBinaryAsByteArray(value));
   }
 
   /**

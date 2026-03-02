@@ -1,4 +1,4 @@
-package io.pgenie.postgresqlcodecs.codecs;
+package io.codemine.postgresql.codecs;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;

@@ -1,6 +1,6 @@
-package io.pgenie.postgresqlcodecs.types;
+package io.codemine.postgresql.types;
 
-import io.pgenie.postgresqlcodecs.codecs.Codec;
+import io.codemine.postgresql.codecs.Codec;
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.util.Random;

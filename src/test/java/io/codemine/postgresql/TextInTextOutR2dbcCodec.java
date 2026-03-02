@@ -1,33 +1,32 @@
-package io.pgenie.postgresqlcodecs;
+package io.codemine.postgresql;
 
+import io.codemine.postgresql.codecs.Codec.ParseException;
 import io.netty.buffer.Unpooled;
-import io.pgenie.postgresqlcodecs.codecs.Codec.ParseException;
 import io.r2dbc.postgresql.client.EncodedParameter;
 import io.r2dbc.postgresql.message.Format;
 import java.nio.charset.StandardCharsets;
 import reactor.core.publisher.Mono;
 
 /**
- * Adapts a {@link io.pgenie.postgresqlcodecs.codecs.Codec} to the r2dbc-postgresql {@link
- * io.r2dbc.postgresql.codec.Codec} SPI using <b>binary format for parameter encoding</b> and
- * <b>text format for result decoding</b>.
+ * Adapts a {@link io.codemine.postgresql.codecs.Codec} to the r2dbc-postgresql {@link
+ * io.r2dbc.postgresql.codec.Codec} SPI using the <b>text wire format for both parameter encoding
+ * and result decoding</b>.
  *
  * <p>Use this with a connection that does <em>not</em> have {@code forceBinary} enabled so that the
  * server returns columns in text format.
  */
-public class BinaryInTextOutR2dbcCodec<A> implements io.r2dbc.postgresql.codec.Codec<A> {
+public class TextInTextOutR2dbcCodec<A> implements io.r2dbc.postgresql.codec.Codec<A> {
 
-  private final io.pgenie.postgresqlcodecs.codecs.Codec<A> codec;
+  private final io.codemine.postgresql.codecs.Codec<A> codec;
   private final Class<A> type;
 
-  public BinaryInTextOutR2dbcCodec(
-      io.pgenie.postgresqlcodecs.codecs.Codec<A> codec, Class<A> type) {
+  public TextInTextOutR2dbcCodec(io.codemine.postgresql.codecs.Codec<A> codec, Class<A> type) {
     this.codec = codec;
     this.type = type;
   }
 
   // -----------------------------------------------------------------------
-  // Encoding (binary)
+  // Encoding
   // -----------------------------------------------------------------------
 
   @Override
@@ -49,19 +48,20 @@ public class BinaryInTextOutR2dbcCodec<A> implements io.r2dbc.postgresql.codec.C
   @Override
   @SuppressWarnings("unchecked")
   public EncodedParameter encode(Object value, int dataType) {
-    byte[] bytes = codec.encodeInBinary((A) value);
+    StringBuilder sb = new StringBuilder();
+    codec.write(sb, (A) value);
+    byte[] bytes = sb.toString().getBytes(StandardCharsets.UTF_8);
     return new EncodedParameter(
-        Format.FORMAT_BINARY, dataType, Mono.just(Unpooled.wrappedBuffer(bytes)));
+        Format.FORMAT_TEXT, dataType, Mono.just(Unpooled.wrappedBuffer(bytes)));
   }
 
   @Override
   public EncodedParameter encodeNull() {
-    return new EncodedParameter(
-        Format.FORMAT_BINARY, codec.oid(), Mono.just(Unpooled.EMPTY_BUFFER));
+    return new EncodedParameter(Format.FORMAT_TEXT, codec.oid(), Mono.just(Unpooled.EMPTY_BUFFER));
   }
 
   // -----------------------------------------------------------------------
-  // Decoding (text)
+  // Decoding
   // -----------------------------------------------------------------------
 
   @Override

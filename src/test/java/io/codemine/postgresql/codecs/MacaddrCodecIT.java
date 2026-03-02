@@ -1,6 +1,6 @@
-package io.pgenie.postgresqlcodecs.codecs;
+package io.codemine.postgresql.codecs;
 
-import io.pgenie.postgresqlcodecs.types.Macaddr;
+import io.codemine.postgresql.types.Macaddr;
 
 public class MacaddrCodecIT extends CodecSuite<Macaddr> {
   public MacaddrCodecIT() {

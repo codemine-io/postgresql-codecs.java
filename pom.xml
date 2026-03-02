@@ -4,12 +4,12 @@
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.pgenie</groupId>
-    <artifactId>postgresql-codecs</artifactId>
+    <groupId>io.codemine</groupId>
+    <artifactId>postgresql</artifactId>
     <version>0.1.0</version>
     <packaging>jar</packaging>
 
-    <name>PostgreSQL Codecs</name>
+    <name>PostgreSQL mapping library</name>
     <description>A Java library for encoding and decoding PostgreSQL data types.</description>
 
     <properties>

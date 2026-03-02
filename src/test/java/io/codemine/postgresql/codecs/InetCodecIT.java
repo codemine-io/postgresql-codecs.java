@@ -1,6 +1,6 @@
-package io.pgenie.postgresqlcodecs.codecs;
+package io.codemine.postgresql.codecs;
 
-import io.pgenie.postgresqlcodecs.types.Inet;
+import io.codemine.postgresql.types.Inet;
 
 public class InetCodecIT extends CodecSuite<Inet> {
   public InetCodecIT() {

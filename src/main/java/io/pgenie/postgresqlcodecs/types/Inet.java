@@ -55,7 +55,76 @@ public sealed interface Inet permits Inet.V4, Inet.V6 {
 
         @Override
         public void write(StringBuilder sb, Inet value) {
-          sb.append(inetToText(value));
+          switch (value) {
+            case Inet.V4(int addr, byte netmask) -> {
+              sb.append((addr >>> 24) & 0xFF);
+              sb.append('.');
+              sb.append((addr >>> 16) & 0xFF);
+              sb.append('.');
+              sb.append((addr >>> 8) & 0xFF);
+              sb.append('.');
+              sb.append(addr & 0xFF);
+              if ((netmask & 0xff) != 32) {
+                sb.append('/').append(netmask & 0xff);
+              }
+            }
+            case Inet.V6(int w1, int w2, int w3, int w4, byte netmask) -> {
+              // Formats a 128-bit IPv6 address (stored as four 32-bit words) as compressed text per
+              // RFC 5952, e.g. {@code ::1} instead of {@code 0:0:0:0:0:0:0:1}.
+
+              int[] g = {
+                (w1 >>> 16) & 0xFFFF, w1 & 0xFFFF,
+                (w2 >>> 16) & 0xFFFF, w2 & 0xFFFF,
+                (w3 >>> 16) & 0xFFFF, w3 & 0xFFFF,
+                (w4 >>> 16) & 0xFFFF, w4 & 0xFFFF
+              };
+              // Find the longest consecutive run of zero groups (min length 2)
+              int elideStart = -1;
+              int elideLen = 0;
+              int curStart = -1;
+              int curLen = 0;
+              for (int i = 0; i < 8; i++) {
+                if (g[i] == 0) {
+                  if (curLen == 0) {
+                    curStart = i;
+                  }
+                  curLen++;
+                } else {
+                  if (curLen >= 2 && curLen > elideLen) {
+                    elideLen = curLen;
+                    elideStart = curStart;
+                  }
+                  curLen = 0;
+                }
+              }
+              if (curLen >= 2 && curLen > elideLen) {
+                elideLen = curLen;
+                elideStart = curStart;
+              }
+
+              boolean first = true;
+              int i = 0;
+              while (i < 8) {
+                if (elideStart >= 0 && i == elideStart) {
+                  sb.append("::");
+                  i += elideLen;
+                  first = false;
+                } else {
+                  if (!first) {
+                    sb.append(':');
+                  }
+                  sb.append(Integer.toHexString(g[i]));
+                  first = false;
+                  i++;
+                }
+              }
+
+              if ((netmask & 0xff) != 128) {
+                sb.append('/').append(netmask & 0xff);
+              }
+            }
+            default -> throw new IllegalStateException("Unreachable: unknown Inet variant");
+          }
         }
 
         @Override
@@ -134,33 +203,6 @@ public sealed interface Inet permits Inet.V4, Inet.V6 {
           };
         }
 
-        // -----------------------------------------------------------------------
-        // Text formatting helpers (package-visible for CidrCodec reuse)
-        // -----------------------------------------------------------------------
-        /** Formats an {@link Inet} value as its canonical PostgreSQL text representation. */
-        static String inetToText(Inet value) {
-          return switch (value) {
-            case Inet.V4(int addr, byte netmask) -> {
-              String ip = ipv4ToString(addr);
-              yield (netmask & 0xff) == 32 ? ip : ip + "/" + (netmask & 0xff);
-            }
-            case Inet.V6(int w1, int w2, int w3, int w4, byte netmask) -> {
-              String ip = ipv6ToString(w1, w2, w3, w4);
-              yield (netmask & 0xff) == 128 ? ip : ip + "/" + (netmask & 0xff);
-            }
-          };
-        }
-
-        static String ipv4ToString(int addr) {
-          return ((addr >>> 24) & 0xFF)
-              + "."
-              + ((addr >>> 16) & 0xFF)
-              + "."
-              + ((addr >>> 8) & 0xFF)
-              + "."
-              + (addr & 0xFF);
-        }
-
         static int parseIpV4(String s) throws Exception {
           String[] parts = s.split("\\.");
           if (parts.length != 4) {
@@ -194,58 +236,6 @@ public sealed interface Inet permits Inet.V4, Inet.V6 {
             netmask = slash >= 0 ? Integer.parseInt(s.substring(slash + 1)) : 32;
             return new Inet.V4(addr, (byte) netmask);
           }
-        }
-
-        /**
-         * Formats a 128-bit IPv6 address (stored as four 32-bit words) as compressed text per RFC
-         * 5952, e.g. {@code ::1} instead of {@code 0:0:0:0:0:0:0:1}.
-         */
-        static String ipv6ToString(int w1, int w2, int w3, int w4) {
-          int[] g = {
-            (w1 >>> 16) & 0xFFFF, w1 & 0xFFFF,
-            (w2 >>> 16) & 0xFFFF, w2 & 0xFFFF,
-            (w3 >>> 16) & 0xFFFF, w3 & 0xFFFF,
-            (w4 >>> 16) & 0xFFFF, w4 & 0xFFFF
-          };
-          // Find the longest consecutive run of zero groups (min length 2)
-          int elideStart = -1;
-          int elideLen = 0;
-          int curStart = -1;
-          int curLen = 0;
-          for (int i = 0; i < 8; i++) {
-            if (g[i] == 0) {
-              if (curLen == 0) {
-                curStart = i;
-              }
-              curLen++;
-            } else {
-              if (curLen >= 2 && curLen > elideLen) {
-                elideLen = curLen;
-                elideStart = curStart;
-              }
-              curLen = 0;
-            }
-          }
-          if (curLen >= 2 && curLen > elideLen) {
-            elideLen = curLen;
-            elideStart = curStart;
-          }
-
-          StringBuilder sb = new StringBuilder(40);
-          int i = 0;
-          while (i < 8) {
-            if (elideStart >= 0 && i == elideStart) {
-              sb.append("::");
-              i += elideLen;
-            } else {
-              if (sb.length() > 0 && sb.charAt(sb.length() - 1) != ':') {
-                sb.append(':');
-              }
-              sb.append(Integer.toHexString(g[i]));
-              i++;
-            }
-          }
-          return sb.toString();
         }
 
         /**

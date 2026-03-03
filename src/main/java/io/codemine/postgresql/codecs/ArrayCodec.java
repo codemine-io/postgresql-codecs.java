@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Random;
 
 /** Codec for multiple-dimensional arrays. */
-public final class ArrayCodec<A> implements Codec<List<A>> {
+final class ArrayCodec<A> implements Codec<List<A>> {
 
   private final Codec<A> elementCodec;
 

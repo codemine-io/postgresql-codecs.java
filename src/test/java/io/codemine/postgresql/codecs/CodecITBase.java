@@ -27,13 +27,13 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-abstract class CodecITSuite<A> {
+abstract class CodecITBase<A> {
 
-  static final PostgreSQLContainer<?> pg;
+  static final PostgreSQLContainer<?> container;
 
   static {
-    pg = new PostgreSQLContainer<>("postgres:18");
-    pg.start();
+    container = new PostgreSQLContainer<>("postgres:18");
+    container.start();
   }
 
   private final Codec<A> codec;
@@ -71,20 +71,20 @@ abstract class CodecITSuite<A> {
   private final Connection binaryInTextOutConn;
 
   @SuppressWarnings("unchecked")
-  protected CodecITSuite(Codec<A> codec, Class<A> type) {
+  protected CodecITBase(Codec<A> codec, Class<A> type) {
     this.codec = codec;
     this.type = type;
     this.arrayCodec = codec.inDim();
 
     try {
       var props = new java.util.Properties();
-      props.setProperty("user", pg.getUsername());
-      props.setProperty("password", pg.getPassword());
+      props.setProperty("user", container.getUsername());
+      props.setProperty("password", container.getPassword());
       // Disable server-side prepared-statement caching so that all result
       // columns remain in text format (avoids rs.getString() returning
       // "[B@…" for bytea columns after the binary-mode switch threshold).
       props.setProperty("prepareThreshold", "0");
-      pgjdbcConnection = DriverManager.getConnection(pg.getJdbcUrl(), props);
+      pgjdbcConnection = DriverManager.getConnection(container.getJdbcUrl(), props);
     } catch (SQLException e) {
       throw new RuntimeException("Failed to open connection", e);
     }
@@ -131,11 +131,11 @@ abstract class CodecITSuite<A> {
       boolean forceBinary, io.r2dbc.postgresql.codec.Codec<?>... r2dbcCodecs) {
     var builder =
         PostgresqlConnectionConfiguration.builder()
-            .host(pg.getHost())
-            .port(pg.getMappedPort(5432))
-            .username(pg.getUsername())
-            .password(pg.getPassword())
-            .database(pg.getDatabaseName())
+            .host(container.getHost())
+            .port(container.getMappedPort(5432))
+            .username(container.getUsername())
+            .password(container.getPassword())
+            .database(container.getDatabaseName())
             .codecRegistrar(
                 (c, allocator, registry) -> {
                   for (var r2dbcCodec : r2dbcCodecs) {

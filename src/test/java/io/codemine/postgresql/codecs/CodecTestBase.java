@@ -9,14 +9,14 @@ import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
 import net.jqwik.api.Provide;
 
-abstract class CodecTestSuite<A> {
+abstract class CodecTestBase<A> {
 
   private final Codec<A> codec;
   private final Class<A> type;
   private final Codec<List<A>> arrayCodec;
 
   @SuppressWarnings("unchecked")
-  protected CodecTestSuite(Codec<A> codec, Class<A> type) {
+  protected CodecTestBase(Codec<A> codec, Class<A> type) {
     this.codec = codec;
     this.type = type;
     this.arrayCodec = codec.inDim();

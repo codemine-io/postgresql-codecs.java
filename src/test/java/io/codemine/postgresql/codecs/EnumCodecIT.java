@@ -1,25 +1,24 @@
 package io.codemine.postgresql.codecs;
 
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import org.junit.jupiter.api.Test;
-import org.postgresql.util.PGobject;
-import org.testcontainers.containers.PostgreSQLContainer;
 
 import io.codemine.postgresql.TextInTextOutR2dbcCodec;
 import io.r2dbc.postgresql.PostgresqlConnectionConfiguration;
 import io.r2dbc.postgresql.PostgresqlConnectionFactory;
 import io.r2dbc.spi.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import net.jqwik.api.Arbitraries;
 import net.jqwik.api.Arbitrary;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
 import net.jqwik.api.Provide;
+import org.junit.jupiter.api.Test;
+import org.postgresql.util.PGobject;
+import org.testcontainers.containers.PostgreSQLContainer;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 

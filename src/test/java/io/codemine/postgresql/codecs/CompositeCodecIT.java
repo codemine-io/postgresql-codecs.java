@@ -21,6 +21,7 @@ import net.jqwik.api.Arbitrary;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
 import net.jqwik.api.Provide;
+import net.jqwik.api.Shrinkable;
 import org.junit.jupiter.api.Test;
 import org.postgresql.util.PGobject;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -201,27 +202,33 @@ class CompositeCodecIT {
   // -----------------------------------------------------------------------
   @Provide("points")
   Arbitrary<Point> points() {
-    return Arbitraries.randomValue(CompositeCodecTest.POINT_CODEC::random);
+    return Arbitraries.fromGeneratorWithSize(
+        size -> r -> Shrinkable.unshrinkable(CompositeCodecTest.POINT_CODEC.random(r, size)));
   }
 
   @Provide("segments")
   Arbitrary<Segment> segments() {
-    return Arbitraries.randomValue(CompositeCodecTest.SEGMENT_CODEC::random);
+    return Arbitraries.fromGeneratorWithSize(
+        size -> r -> Shrinkable.unshrinkable(CompositeCodecTest.SEGMENT_CODEC.random(r, size)));
   }
 
   @Provide("taggedData")
   Arbitrary<TaggedData> taggedData() {
-    return Arbitraries.randomValue(CompositeCodecTest.TAGGED_DATA_CODEC::random);
+    return Arbitraries.fromGeneratorWithSize(
+        size -> r -> Shrinkable.unshrinkable(CompositeCodecTest.TAGGED_DATA_CODEC.random(r, size)));
   }
 
   @Provide("annotatedSegments")
   Arbitrary<AnnotatedSegment> annotatedSegments() {
-    return Arbitraries.randomValue(CompositeCodecTest.ANNOTATED_CODEC::random);
+    return Arbitraries.fromGeneratorWithSize(
+        size -> r -> Shrinkable.unshrinkable(CompositeCodecTest.ANNOTATED_CODEC.random(r, size)));
   }
 
   @Provide("pointArrays")
   Arbitrary<List<Point>> pointArrays() {
-    return Arbitraries.randomValue(CompositeCodecTest.POINT_CODEC.inDim()::random);
+    return Arbitraries.fromGeneratorWithSize(
+        size ->
+            r -> Shrinkable.unshrinkable(CompositeCodecTest.POINT_CODEC.inDim().random(r, size)));
   }
 
   // -----------------------------------------------------------------------

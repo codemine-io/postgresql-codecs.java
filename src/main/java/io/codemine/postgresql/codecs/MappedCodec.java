@@ -52,7 +52,7 @@ final class MappedCodec<A, B> implements Codec<B> {
   }
 
   @Override
-  public B random(Random r) {
-    return toMapped.apply(codec.random(r));
+  public B random(Random r, int size) {
+    return toMapped.apply(codec.random(r, size));
   }
 }

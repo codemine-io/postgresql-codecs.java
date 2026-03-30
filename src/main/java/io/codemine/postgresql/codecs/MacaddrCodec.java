@@ -84,7 +84,7 @@ final class MacaddrCodec implements Codec<MacaddrCodec.Macaddr> {
   }
 
   @Override
-  public Macaddr random(Random r) {
+  public Macaddr random(Random r, int size) {
     byte[] b = new byte[6];
     r.nextBytes(b);
     return new Macaddr(b[0], b[1], b[2], b[3], b[4], b[5]);

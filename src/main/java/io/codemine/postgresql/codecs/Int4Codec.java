@@ -52,7 +52,8 @@ final class Int4Codec implements Codec<Integer> {
   }
 
   @Override
-  public Integer random(Random r) {
-    return r.nextInt(10_000) - 5_000;
+  public Integer random(Random r, int size) {
+    if (size == 0) return 0;
+    return r.nextInt(2 * size + 1) - size;
   }
 }

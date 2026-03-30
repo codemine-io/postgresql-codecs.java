@@ -9,6 +9,7 @@ import net.jqwik.api.Arbitrary;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
 import net.jqwik.api.Provide;
+import net.jqwik.api.Shrinkable;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -35,7 +36,8 @@ class EnumCodecTest {
   // -----------------------------------------------------------------------
   @Provide
   Arbitrary<Color> colors() {
-    return Arbitraries.randomValue(COLOR_CODEC::random);
+    return Arbitraries.fromGeneratorWithSize(
+        size -> r -> Shrinkable.unshrinkable(COLOR_CODEC.random(r, size)));
   }
 
   // -----------------------------------------------------------------------

@@ -26,17 +26,20 @@ abstract class CodecTestBase<A> {
 
   @Provide
   Arbitrary<A> values() {
-    return net.jqwik.api.Arbitraries.randomValue(codec::random);
+    return net.jqwik.api.Arbitraries.fromGeneratorWithSize(
+        size -> r -> net.jqwik.api.Shrinkable.unshrinkable(codec.random(r, size)));
   }
 
   @Provide
   Arbitrary<List<A>> arrayValues() {
-    return net.jqwik.api.Arbitraries.randomValue(arrayCodec::random);
+    return net.jqwik.api.Arbitraries.fromGeneratorWithSize(
+        size -> r -> net.jqwik.api.Shrinkable.unshrinkable(arrayCodec.random(r, size)));
   }
 
   @Provide
   Arbitrary<List<List<A>>> arrayArrayValues() {
-    return net.jqwik.api.Arbitraries.randomValue(arrayArrayCodec::random);
+    return net.jqwik.api.Arbitraries.fromGeneratorWithSize(
+        size -> r -> net.jqwik.api.Shrinkable.unshrinkable(arrayArrayCodec.random(r, size)));
   }
 
   @Property(tries = 100)

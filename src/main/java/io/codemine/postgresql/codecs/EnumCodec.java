@@ -75,7 +75,7 @@ public final class EnumCodec<E> implements Codec<E> {
   }
 
   @Override
-  public E random(Random r) {
+  public E random(Random r, int size) {
     List<E> values = new ArrayList<>(pgLabels.keySet());
     return values.get(r.nextInt(values.size()));
   }

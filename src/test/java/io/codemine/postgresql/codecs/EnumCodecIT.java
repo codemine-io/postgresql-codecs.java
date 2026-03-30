@@ -16,6 +16,7 @@ import net.jqwik.api.Arbitrary;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
 import net.jqwik.api.Provide;
+import net.jqwik.api.Shrinkable;
 import org.junit.jupiter.api.Test;
 import org.postgresql.util.PGobject;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -100,7 +101,8 @@ class EnumCodecIT {
   // -----------------------------------------------------------------------
   @Provide
   Arbitrary<Mood> moods() {
-    return Arbitraries.randomValue(MOOD_CODEC::random);
+    return Arbitraries.fromGeneratorWithSize(
+        size -> r -> Shrinkable.unshrinkable(MOOD_CODEC.random(r, size)));
   }
 
   // -----------------------------------------------------------------------

@@ -314,11 +314,11 @@ public final class CompositeCodec<Z> implements Codec<Z> {
 
   @Override
   @SuppressWarnings("unchecked")
-  public Z random(Random r) {
+  public Z random(Random r, int size) {
     Object fn = constructor;
     for (var f : fields) {
       var field = (Field<Z, Object>) f;
-      Object randomValue = ((Codec<Object>) field.codec).random(r);
+      Object randomValue = ((Codec<Object>) field.codec).random(r, size);
       fn = ((Function<Object, Object>) fn).apply(randomValue);
     }
     return (Z) fn;

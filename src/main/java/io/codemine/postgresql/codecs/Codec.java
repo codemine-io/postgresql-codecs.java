@@ -181,8 +181,13 @@ public interface Codec<A> {
    * Generates a random value of type A, for testing purposes. The provided {@link Random} instance
    * should be used as the source of randomness, and the generated values should cover a wide range
    * of possible inputs, including edge cases.
+   *
+   * <p>The {@code size} parameter follows the QuickCheck convention: it is a non-negative integer
+   * that controls the "size" of the generated value — for scalars it bounds the magnitude, for
+   * collections it bounds the number of elements, and for multidimensional arrays it is propagated
+   * uniformly to all sub-arrays so that the resulting array has a rectangular shape.
    */
-  A random(Random r);
+  A random(Random r, int size);
 
   /**
    * Returns a new codec that maps values of type A to type B using the provided pair of mapping

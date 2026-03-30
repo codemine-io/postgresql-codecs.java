@@ -48,9 +48,9 @@ final class TextCodec implements Codec<String> {
   }
 
   @Override
-  public String random(Random r) {
+  public String random(Random r, int size) {
     String chars = "abcdefghijklmnopqABCDEF0123,()\"\\";
-    int len = r.nextInt(10);
+    int len = size == 0 ? 0 : r.nextInt(size + 1);
     StringBuilder sb = new StringBuilder(len);
     for (int i = 0; i < len; i++) {
       sb.append(chars.charAt(r.nextInt(chars.length())));

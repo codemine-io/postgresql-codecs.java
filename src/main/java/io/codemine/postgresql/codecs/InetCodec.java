@@ -225,7 +225,7 @@ final class InetCodec implements Codec<InetCodec.Inet> {
   }
 
   @Override
-  public Inet random(Random r) {
+  public Inet random(Random r, int size) {
     if (r.nextBoolean()) {
       return new Inet.V4(r.nextInt(), (byte) r.nextInt(0, 33));
     } else {

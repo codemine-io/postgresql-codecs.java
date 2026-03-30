@@ -244,15 +244,14 @@ final class ArrayCodec<A> implements Codec<List<A>> {
   // Random generation
   // -----------------------------------------------------------------------
   @Override
-  public List<A> random(Random r) {
-    // TODO: Update to support multi-dimensional arrays. Possibly by parameterizing with the size of
-    // the dimension, assuming that it gets determined by the caller. Thus we can achieve the stable
-    // size of each row, which is required by the DB.
-
-    int size = r.nextInt(6); // 0–5 elements
+  public List<A> random(Random r, int size) {
+    // Determine the inner size once and reuse it for every element.  This is critical for
+    // multi-dimensional arrays: all sub-arrays at the same level must have the same length to
+    // satisfy PostgreSQL's rectangular-array constraint.
+    int innerSize = size == 0 ? 0 : r.nextInt(size + 1);
     List<A> list = new ArrayList<>(size);
     for (int i = 0; i < size; i++) {
-      list.add(elementCodec.random(r));
+      list.add(elementCodec.random(r, innerSize));
     }
     return list;
   }

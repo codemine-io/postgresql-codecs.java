@@ -43,6 +43,23 @@ public interface Codec<A> {
   Codec<Byte> CHAR = new CharCodec();
   Codec<Integer> OID = new OidCodec();
   Codec<Long> MONEY = new MoneyCodec();
+  Codec<Integer> DATE = new DateCodec();
+  Codec<Long> TIME = new TimeCodec();
+  Codec<Timetz> TIMETZ = new TimetzCodec();
+  Codec<Long> TIMESTAMP = new TimestampCodec();
+  Codec<Long> TIMESTAMPTZ = new TimestamptzCodec();
+  Codec<Interval> INTERVAL = new IntervalCodec();
+  Codec<Point> POINT = new PointCodec();
+  Codec<Line> LINE = new LineCodec();
+  Codec<Lseg> LSEG = new LsegCodec();
+  Codec<Box> BOX = new BoxCodec();
+  Codec<PgPath> PATH = new PathCodec();
+  Codec<Polygon> POLYGON = new PolygonCodec();
+  Codec<Circle> CIRCLE = new CircleCodec();
+  Codec<Inet> CIDR = new CidrCodec();
+  Codec<Macaddr8> MACADDR8 = new Macaddr8Codec();
+  Codec<Bit> BIT = new BitCodec();
+  Codec<Bit> VARBIT = new VarbitCodec();
 
   // -----------------------------------------------------------------------
   // Type metadata

@@ -28,6 +28,21 @@ public interface Codec<A> {
   Codec<String> TEXT = new TextCodec();
   Codec<Inet> INET = new InetCodec();
   Codec<Macaddr> MACADDR = new MacaddrCodec();
+  Codec<Boolean> BOOL = new BoolCodec();
+  Codec<Short> INT2 = new Int2Codec();
+  Codec<Long> INT8 = new Int8Codec();
+  Codec<Float> FLOAT4 = new Float4Codec();
+  Codec<Double> FLOAT8 = new Float8Codec();
+  Codec<java.math.BigDecimal> NUMERIC = new NumericCodec();
+  Codec<Bytea> BYTEA = new ByteaCodec();
+  Codec<java.util.UUID> UUID = new UuidCodec();
+  Codec<String> JSON = new JsonCodec();
+  Codec<String> JSONB = new JsonbCodec();
+  Codec<String> VARCHAR = new VarcharCodec();
+  Codec<String> BPCHAR = new BpcharCodec();
+  Codec<Byte> CHAR = new CharCodec();
+  Codec<Integer> OID = new OidCodec();
+  Codec<Long> MONEY = new MoneyCodec();
 
   // -----------------------------------------------------------------------
   // Type metadata

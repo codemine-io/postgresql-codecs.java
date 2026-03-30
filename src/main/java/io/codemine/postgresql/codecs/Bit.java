@@ -24,11 +24,15 @@ public record Bit(int length, byte[] data) {
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder(length);
+    write(sb);
+    return sb.toString();
+  }
+
+  public void write(StringBuilder sb) {
     for (int i = 0; i < length; i++) {
       int byteIndex = i / 8;
       int bitIndex = 7 - (i % 8);
       sb.append((data[byteIndex] >> bitIndex) & 1);
     }
-    return sb.toString();
   }
 }

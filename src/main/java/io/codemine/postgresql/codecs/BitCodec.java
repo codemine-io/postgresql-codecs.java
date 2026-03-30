@@ -24,11 +24,7 @@ final class BitCodec implements Codec<Bit> {
 
   @Override
   public void write(StringBuilder sb, Bit value) {
-    for (int i = 0; i < value.length(); i++) {
-      int byteIndex = i / 8;
-      int bitIndex = 7 - (i % 8);
-      sb.append((value.data()[byteIndex] >> bitIndex) & 1);
-    }
+    value.write(sb);
   }
 
   @Override

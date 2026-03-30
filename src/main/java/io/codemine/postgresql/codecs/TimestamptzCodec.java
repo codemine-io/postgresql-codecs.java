@@ -3,10 +3,15 @@ package io.codemine.postgresql.codecs;
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Random;
 
 /** Codec for PostgreSQL {@code timestamptz} values, represented as {@link Instant}. */
 final class TimestamptzCodec implements Codec<Instant> {
+
+  private static final long PG_EPOCH_UNIX_SECONDS = 946_684_800L;
+  private static final long PG_EPOCH_UNIX_MICROS = PG_EPOCH_UNIX_SECONDS * 1_000_000L;
 
   @Override
   public String name() {
@@ -25,8 +30,25 @@ final class TimestamptzCodec implements Codec<Instant> {
 
   @Override
   public void write(StringBuilder sb, Instant value) {
-    long pgMicros = toPgMicros(value);
-    TimestampCodec.writeTimestamp(sb, pgMicros);
+    long unixMicros = value.getEpochSecond() * 1_000_000L + value.getNano() / 1_000L;
+    long epochSecond = Math.floorDiv(unixMicros, 1_000_000L);
+    long microOfSecond = Math.floorMod(unixMicros, 1_000_000L);
+    LocalDateTime dt = LocalDateTime.ofEpochSecond(epochSecond, 0, ZoneOffset.UTC);
+    sb.append(
+        String.format(
+            "%04d-%02d-%02d %02d:%02d:%02d",
+            dt.getYear(),
+            dt.getMonthValue(),
+            dt.getDayOfMonth(),
+            dt.getHour(),
+            dt.getMinute(),
+            dt.getSecond()));
+    if (microOfSecond > 0) {
+      String f = String.format("%06d", microOfSecond);
+      int end = f.length();
+      while (end > 0 && f.charAt(end - 1) == '0') end--;
+      sb.append('.').append(f, 0, end);
+    }
     sb.append("+00");
   }
 
@@ -35,8 +57,52 @@ final class TimestamptzCodec implements Codec<Instant> {
       throws Codec.DecodingException {
     String s = input.subSequence(offset, input.length()).toString().trim();
     try {
-      long pgMicros = TimestampCodec.parseTimestamp(s);
-      return new Codec.ParsingResult<>(fromPgMicros(pgMicros), input.length());
+      // Format: YYYY-MM-DD hh:mm:ss[.ffffff][+-hh[:mm[:ss]]]
+      int spaceIdx = s.indexOf(' ');
+      if (spaceIdx < 0) {
+        throw new IllegalArgumentException("Invalid timestamptz: " + s);
+      }
+      String datePart = s.substring(0, spaceIdx);
+      String timePart = s.substring(spaceIdx + 1);
+
+      String[] dateFields = datePart.split("-");
+      int year = Integer.parseInt(dateFields[0]);
+      int month = Integer.parseInt(dateFields[1]);
+      int day = Integer.parseInt(dateFields[2]);
+
+      // Find and strip timezone suffix
+      int tzStart = findTimezoneStart(timePart);
+      int tzOffset = 0;
+      if (tzStart >= 0) {
+        tzOffset = parseTimezoneOffset(timePart.substring(tzStart));
+        timePart = timePart.substring(0, tzStart);
+      }
+
+      String[] timeFields = timePart.split(":");
+      int hour = Integer.parseInt(timeFields[0]);
+      int minute = Integer.parseInt(timeFields[1]);
+      String secStr = timeFields[2];
+      int second;
+      long microOfSecond = 0;
+      int dot = secStr.indexOf('.');
+      if (dot >= 0) {
+        second = Integer.parseInt(secStr.substring(0, dot));
+        String frac = secStr.substring(dot + 1);
+        while (frac.length() < 6) frac = frac + "0";
+        if (frac.length() > 6) frac = frac.substring(0, 6);
+        microOfSecond = Long.parseLong(frac);
+      } else {
+        second = Integer.parseInt(secStr);
+      }
+
+      LocalDateTime dt = LocalDateTime.of(year, month, day, hour, minute, second);
+      long epochSecond = dt.toEpochSecond(ZoneOffset.UTC) - tzOffset;
+      long unixMicros = epochSecond * 1_000_000L + microOfSecond;
+      return new Codec.ParsingResult<>(
+          Instant.ofEpochSecond(
+              Math.floorDiv(unixMicros, 1_000_000L),
+              Math.floorMod(unixMicros, 1_000_000L) * 1_000L),
+          input.length());
     } catch (Exception e) {
       throw new Codec.DecodingException(input, offset, "Invalid timestamptz: " + s);
     }
@@ -44,7 +110,8 @@ final class TimestamptzCodec implements Codec<Instant> {
 
   @Override
   public void encodeInBinary(Instant value, ByteArrayOutputStream out) {
-    long v = toPgMicros(value);
+    long unixMicros = value.getEpochSecond() * 1_000_000L + value.getNano() / 1_000L;
+    long v = unixMicros - PG_EPOCH_UNIX_MICROS;
     out.write((int) (v >>> 56) & 0xFF);
     out.write((int) (v >>> 48) & 0xFF);
     out.write((int) (v >>> 40) & 0xFF);
@@ -58,28 +125,42 @@ final class TimestamptzCodec implements Codec<Instant> {
   @Override
   public Instant decodeInBinary(ByteBuffer buf, int length) {
     long pgMicros = buf.getLong();
-    return fromPgMicros(pgMicros);
+    long unixMicros = pgMicros + PG_EPOCH_UNIX_MICROS;
+    return Instant.ofEpochSecond(
+        Math.floorDiv(unixMicros, 1_000_000L), Math.floorMod(unixMicros, 1_000_000L) * 1_000L);
   }
 
   @Override
   public Instant random(Random r, int size) {
-    if (size == 0) return Instant.ofEpochSecond(TimestampCodec.PG_EPOCH_UNIX_SECONDS);
+    if (size == 0) return Instant.ofEpochSecond(PG_EPOCH_UNIX_SECONDS);
     long bound = (long) size * 86_400_000_000L;
     long pgMicros = r.nextLong(-bound, bound + 1);
-    return fromPgMicros(pgMicros);
+    long unixMicros = pgMicros + PG_EPOCH_UNIX_MICROS;
+    return Instant.ofEpochSecond(
+        Math.floorDiv(unixMicros, 1_000_000L), Math.floorMod(unixMicros, 1_000_000L) * 1_000L);
   }
 
-  /** Converts an {@link Instant} to PG microseconds from 2000-01-01 UTC. */
-  static long toPgMicros(Instant instant) {
-    long unixMicros = instant.getEpochSecond() * 1_000_000L + instant.getNano() / 1_000L;
-    return unixMicros - TimestampCodec.PG_EPOCH_UNIX_MICROS;
+  private static int findTimezoneStart(String s) {
+    for (int i = s.length() - 1; i >= 0; i--) {
+      char c = s.charAt(i);
+      if (c == '+' || c == '-') {
+        if (i > 0 && Character.isDigit(s.charAt(i - 1))) {
+          return i;
+        }
+      }
+    }
+    return -1;
   }
 
-  /** Converts PG microseconds from 2000-01-01 UTC to an {@link Instant}. */
-  static Instant fromPgMicros(long pgMicros) {
-    long unixMicros = pgMicros + TimestampCodec.PG_EPOCH_UNIX_MICROS;
-    long epochSecond = Math.floorDiv(unixMicros, 1_000_000L);
-    long microOfSecond = Math.floorMod(unixMicros, 1_000_000L);
-    return Instant.ofEpochSecond(epochSecond, microOfSecond * 1_000L);
+  private static int parseTimezoneOffset(String tz) {
+    char sign = tz.charAt(0);
+    String abs = tz.substring(1);
+    String[] parts = abs.split(":");
+    int hours = Integer.parseInt(parts[0]);
+    int minutes = parts.length > 1 ? Integer.parseInt(parts[1]) : 0;
+    int seconds = parts.length > 2 ? Integer.parseInt(parts[2]) : 0;
+    int offset = hours * 3600 + minutes * 60 + seconds;
+    if (sign == '-') offset = -offset;
+    return offset;
   }
 }

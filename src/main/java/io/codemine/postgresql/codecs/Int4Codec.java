@@ -5,7 +5,7 @@ import java.nio.ByteBuffer;
 import java.util.Random;
 
 /** Codec for PostgreSQL {@code int4} values. */
-public final class Int4Codec implements Codec<Integer> {
+final class Int4Codec implements Codec<Integer> {
 
   @Override
   public String name() {

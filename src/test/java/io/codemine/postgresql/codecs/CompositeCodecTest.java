@@ -1,7 +1,6 @@
 package io.codemine.postgresql.codecs;
 
 import java.util.List;
-
 import net.jqwik.api.Group;
 
 /**
@@ -41,8 +40,8 @@ class CompositeCodecTest {
           "",
           "test_pt",
           (Integer x) -> (Integer y) -> new Point(x, y),
-          new CompositeCodec.Field<>("x", Point::x, new Int4Codec()),
-          new CompositeCodec.Field<>("y", Point::y, new Int4Codec()));
+          new CompositeCodec.Field<>("x", Point::x, Codec.INT4),
+          new CompositeCodec.Field<>("y", Point::y, Codec.INT4));
 
   static final CompositeCodec<Segment> SEGMENT_CODEC =
       new CompositeCodec<>(
@@ -57,8 +56,8 @@ class CompositeCodecTest {
           "",
           "test_tagged",
           (String tag) -> (List<String> items) -> new TaggedData(tag, items),
-          new CompositeCodec.Field<>("tag", TaggedData::tag, new TextCodec()),
-          new CompositeCodec.Field<>("items", TaggedData::items, new TextCodec().inDim()));
+          new CompositeCodec.Field<>("tag", TaggedData::tag, Codec.TEXT),
+          new CompositeCodec.Field<>("items", TaggedData::items, Codec.TEXT.inDim()));
 
   static final CompositeCodec<AnnotatedSegment> ANNOTATED_CODEC =
       new CompositeCodec<>(
@@ -66,9 +65,9 @@ class CompositeCodecTest {
           "test_ann_seg",
           (String label) ->
               (Segment seg) -> (List<String> tags) -> new AnnotatedSegment(label, seg, tags),
-          new CompositeCodec.Field<>("label", AnnotatedSegment::label, new TextCodec()),
+          new CompositeCodec.Field<>("label", AnnotatedSegment::label, Codec.TEXT),
           new CompositeCodec.Field<>("seg", AnnotatedSegment::seg, SEGMENT_CODEC),
-          new CompositeCodec.Field<>("tags", AnnotatedSegment::tags, new TextCodec().inDim()));
+          new CompositeCodec.Field<>("tags", AnnotatedSegment::tags, Codec.TEXT.inDim()));
 
   // -----------------------------------------------------------------------
   // Test groups — each extends CodecTestBase to get the full binary+text

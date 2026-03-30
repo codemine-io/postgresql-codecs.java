@@ -6,7 +6,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Random;
 
 /** Codec for PostgreSQL {@code text} values. */
-public final class TextCodec implements Codec<String> {
+final class TextCodec implements Codec<String> {
 
   @Override
   public String name() {

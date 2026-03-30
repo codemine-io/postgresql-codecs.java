@@ -1,7 +1,7 @@
 package io.codemine.postgresql.codecs;
 
-public class InetCodecIT extends CodecITBase<Inet> {
+public class InetCodecIT extends CodecITBase<InetCodec.Inet> {
   public InetCodecIT() {
-    super(Codec.INET, Inet.class);
+    super(Codec.INET, InetCodec.Inet.class);
   }
 }

@@ -12,6 +12,16 @@ final class CharCodec implements Codec<Byte> {
     return "char";
   }
 
+  /**
+   * PostgreSQL's internal {@code "char"} type requires double-quoting in SQL casts to distinguish
+   * it from {@code char(N)} (bpchar, OID 1042). Without the quotes, {@code SELECT $1::char} targets
+   * bpchar, not the internal "char" (OID 18).
+   */
+  @Override
+  public String typeSig() {
+    return "\"char\"";
+  }
+
   @Override
   public int scalarOid() {
     return 18;

@@ -3,9 +3,12 @@ package io.codemine.postgresql;
 import io.codemine.postgresql.codecs.Codec.DecodingException;
 import io.netty.buffer.Unpooled;
 import io.r2dbc.postgresql.client.EncodedParameter;
+import io.r2dbc.postgresql.codec.CodecMetadata;
+import io.r2dbc.postgresql.codec.PostgresTypeIdentifier;
 import io.r2dbc.postgresql.message.Format;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Collections;
 import reactor.core.publisher.Mono;
 
 /**
@@ -13,7 +16,8 @@ import reactor.core.publisher.Mono;
  * io.r2dbc.postgresql.codec.Codec} SPI so that custom types can be encoded and decoded over the
  * binary extended-query protocol.
  */
-public class BinaryInBinaryOutR2dbcCodec<A> implements io.r2dbc.postgresql.codec.Codec<A> {
+public class BinaryInBinaryOutR2dbcCodec<A>
+    implements io.r2dbc.postgresql.codec.Codec<A>, CodecMetadata {
 
   private final io.codemine.postgresql.codecs.Codec<A> codec;
   private final Class<A> type;
@@ -55,6 +59,25 @@ public class BinaryInBinaryOutR2dbcCodec<A> implements io.r2dbc.postgresql.codec
   public EncodedParameter encodeNull() {
     return new EncodedParameter(
         Format.FORMAT_BINARY, codec.oid(), Mono.just(Unpooled.EMPTY_BUFFER));
+  }
+
+  // -----------------------------------------------------------------------
+  // CodecMetadata
+  // -----------------------------------------------------------------------
+
+  @Override
+  public Class<?> type() {
+    return type;
+  }
+
+  @Override
+  public Iterable<Format> getFormats() {
+    return Collections.singletonList(Format.FORMAT_BINARY);
+  }
+
+  @Override
+  public Iterable<? extends PostgresTypeIdentifier> getDataTypes() {
+    return Collections.singletonList(codec::oid);
   }
 
   // -----------------------------------------------------------------------

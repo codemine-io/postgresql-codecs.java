@@ -124,8 +124,11 @@ final class CidrCodec implements Codec<Inet> {
       byte mask = (byte) r.nextInt(0, 33);
       int addr = r.nextInt();
       // Zero out host bits for valid CIDR
-      if ((mask & 0xff) < 32) {
-        addr &= (-1 << (32 - (mask & 0xff)));
+      int maskBits = mask & 0xff;
+      if (maskBits == 0) {
+        addr = 0;
+      } else if (maskBits < 32) {
+        addr &= (-1 << (32 - maskBits));
       }
       return new Inet.V4(addr, mask);
     } else {
@@ -143,7 +146,7 @@ final class CidrCodec implements Codec<Inet> {
         } else {
           // Partial: zero out the host bits in this word
           int bitsToKeep = maskBits - wordStart;
-          words[i] &= (-1 << (32 - bitsToKeep));
+          words[i] = (bitsToKeep == 0) ? 0 : (words[i] & (-1 << (32 - bitsToKeep)));
         }
       }
       return new Inet.V6(words[0], words[1], words[2], words[3], mask);

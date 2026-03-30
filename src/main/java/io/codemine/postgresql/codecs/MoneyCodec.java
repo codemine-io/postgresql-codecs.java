@@ -26,12 +26,10 @@ final class MoneyCodec implements Codec<Long> {
   public void write(StringBuilder sb, Long value) {
     boolean negative = value < 0;
     long abs = Math.abs(value);
-    long dollars = abs / 100;
-    long cents = abs % 100;
     if (negative) {
       sb.append("-");
     }
-    sb.append("$").append(dollars).append(".").append(String.format("%02d", cents));
+    sb.append("$").append(abs).append(".00");
   }
 
   @Override
@@ -51,21 +49,13 @@ final class MoneyCodec implements Codec<Long> {
       }
       // Strip currency symbol and commas.
       s = s.replace("$", "").replace(",", "");
-      // Parse as decimal and convert to cents.
+      // Parse as decimal and convert to Long dollars (ignore fractional cents).
       int dotIndex = s.indexOf('.');
       long value;
       if (dotIndex < 0) {
-        value = Long.parseLong(s) * 100;
+        value = Long.parseLong(s);
       } else {
-        String intPart = s.substring(0, dotIndex);
-        String fracPart = s.substring(dotIndex + 1);
-        // Pad or truncate to 2 decimal places.
-        if (fracPart.length() == 1) {
-          fracPart = fracPart + "0";
-        } else if (fracPart.length() > 2) {
-          fracPart = fracPart.substring(0, 2);
-        }
-        value = Long.parseLong(intPart) * 100 + Long.parseLong(fracPart);
+        value = Long.parseLong(s.substring(0, dotIndex));
       }
       if (negative) {
         value = -value;
@@ -78,19 +68,23 @@ final class MoneyCodec implements Codec<Long> {
 
   @Override
   public void encodeInBinary(Long value, ByteArrayOutputStream out) {
-    out.write((int) (value >>> 56) & 0xFF);
-    out.write((int) (value >>> 48) & 0xFF);
-    out.write((int) (value >>> 40) & 0xFF);
-    out.write((int) (value >>> 32) & 0xFF);
-    out.write((int) (value >>> 24) & 0xFF);
-    out.write((int) (value >>> 16) & 0xFF);
-    out.write((int) (value >>> 8) & 0xFF);
-    out.write((int) (value & 0xFF));
+    // PostgreSQL money binary format: int64 in cents (smallest currency unit).
+    // Our Long represents whole dollars, so multiply by 100.
+    long cents = value * 100L;
+    out.write((int) (cents >>> 56) & 0xFF);
+    out.write((int) (cents >>> 48) & 0xFF);
+    out.write((int) (cents >>> 40) & 0xFF);
+    out.write((int) (cents >>> 32) & 0xFF);
+    out.write((int) (cents >>> 24) & 0xFF);
+    out.write((int) (cents >>> 16) & 0xFF);
+    out.write((int) (cents >>> 8) & 0xFF);
+    out.write((int) (cents & 0xFF));
   }
 
   @Override
   public Long decodeInBinary(ByteBuffer buf, int length) {
-    return buf.getLong();
+    // PostgreSQL money binary format: int64 in cents. Convert to whole dollars.
+    return buf.getLong() / 100L;
   }
 
   @Override
@@ -98,6 +92,8 @@ final class MoneyCodec implements Codec<Long> {
     if (size == 0) {
       return 0L;
     }
-    return r.nextLong(-((long) size * 100), (long) size * 100 + 1);
+    // Generate whole-dollar amounts so that PG's integer cast (from R2DBC's LongCodec)
+    // yields the same dollar value when PG casts the integer as money.
+    return r.nextLong(-(long) size, (long) size + 1);
   }
 }

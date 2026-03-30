@@ -14,6 +14,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+      pages: write
+      id-token: write
 
     steps:
       - uses: actions/checkout@v4
@@ -35,6 +37,17 @@ jobs:
         run: mvn --batch-mode deploy -DskipTests
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate Javadocs
+        run: mvn javadoc:javadoc -DskipTests
+
+      - name: Upload Javadocs artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: target/site/apidocs
+
+      - name: Deploy Javadocs to GitHub Pages
+        uses: actions/deploy-pages@v4
 
       - name: Commit the version update
         id: commit

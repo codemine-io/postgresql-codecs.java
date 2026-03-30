@@ -48,10 +48,8 @@ final class NumericCodec implements Codec<BigDecimal> {
 
   @Override
   public void encodeInBinary(BigDecimal value, ByteArrayOutputStream out) {
-    short sign = value.signum() < 0 ? NUMERIC_NEG : NUMERIC_POS;
     BigDecimal abs = value.abs();
     int scale = abs.scale();
-    short dscale = (short) Math.max(scale, 0);
 
     // Pad scale up to a multiple of 4 for base-10000 alignment.
     int paddedScale = scale <= 0 ? 0 : ((scale + 3) / 4) * 4;
@@ -76,16 +74,18 @@ final class NumericCodec implements Codec<BigDecimal> {
       effectiveNdigits--;
     }
 
+    short sign = value.signum() < 0 ? NUMERIC_NEG : NUMERIC_POS;
     writeShort(out, (short) effectiveNdigits);
     writeShort(out, weight);
     writeShort(out, sign);
-    writeShort(out, dscale);
+    writeShort(out, (short) Math.max(scale, 0));
     for (int i = 0; i < effectiveNdigits; i++) {
       writeShort(out, digits[i]);
     }
   }
 
   @Override
+  @SuppressWarnings("checkstyle:VariableDeclarationUsageDistance")
   public BigDecimal decodeInBinary(ByteBuffer buf, int length) throws Codec.DecodingException {
     short ndigits = buf.getShort();
     short weight = buf.getShort();
@@ -112,10 +112,7 @@ final class NumericCodec implements Codec<BigDecimal> {
     }
 
     // The total number of base-10000 positions contributing to the fractional part.
-    int fractionalPositions = ndigits - (weight + 1);
-    int impliedScale = fractionalPositions * 4;
-
-    BigDecimal result = new BigDecimal(unscaled, impliedScale);
+    BigDecimal result = new BigDecimal(unscaled, (ndigits - (weight + 1)) * 4);
     if (dscale >= 0 && dscale != result.scale()) {
       result = result.setScale(dscale);
     }

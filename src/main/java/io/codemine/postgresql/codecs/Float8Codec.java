@@ -40,8 +40,9 @@ final class Float8Codec implements Codec<Double> {
       throws Codec.DecodingException {
     String s = input.subSequence(offset, input.length()).toString().trim();
     try {
+      String normalized = s.toLowerCase();
       double value =
-          switch (s.toLowerCase()) {
+          switch (normalized) {
             case "nan" -> Double.NaN;
             case "infinity" -> Double.POSITIVE_INFINITY;
             case "-infinity" -> Double.NEGATIVE_INFINITY;

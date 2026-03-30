@@ -65,7 +65,7 @@ final class ArrayCodec<A> implements Codec<List<A>> {
 
   /**
    * Writes a single array element in PostgreSQL array-literal notation, quoting and
-   * backslash-escaping the content when it contains reserved characters ({@code , { } " \} or
+   * backslash-escaping the content when it contains reserved characters ({@code , {} " \} or
    * whitespace) or when the element is the empty string.
    *
    * <p>The backslash-escape convention ({@code \"} and {@code \\}) is used because it is the form

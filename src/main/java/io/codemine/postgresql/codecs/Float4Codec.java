@@ -40,8 +40,9 @@ final class Float4Codec implements Codec<Float> {
       throws Codec.DecodingException {
     String s = input.subSequence(offset, input.length()).toString().trim();
     try {
+      String normalized = s.toLowerCase();
       float value =
-          switch (s.toLowerCase()) {
+          switch (normalized) {
             case "nan" -> Float.NaN;
             case "infinity" -> Float.POSITIVE_INFINITY;
             case "-infinity" -> Float.NEGATIVE_INFINITY;

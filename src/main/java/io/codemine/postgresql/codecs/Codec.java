@@ -132,10 +132,15 @@ public interface Codec<A> {
     return 0;
   }
 
+  /**
+   * Returns the OID for this type: array OID when {@link #dimensions()} {@code > 0}, else scalar
+   * OID.
+   */
   default int oid() {
     return dimensions() > 0 ? arrayOid() : scalarOid();
   }
 
+  /** Returns the JDBC {@link java.sql.Types} constant that best represents this PostgreSQL type. */
   default int jdbcType() {
     return java.sql.Types.OTHER;
   }

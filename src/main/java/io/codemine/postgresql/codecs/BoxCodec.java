@@ -64,14 +64,18 @@ final class BoxCodec implements Codec<Box> {
       int depth = 0;
       for (int i = 0; i < s.length(); i++) {
         char c = s.charAt(i);
-        if (c == '(') depth++;
-        else if (c == ')') depth--;
-        else if (c == ',' && depth == 0) {
+        if (c == '(') {
+          depth++;
+        } else if (c == ')') {
+          depth--;
+        } else if (c == ',' && depth == 0) {
           midSep = i;
           break;
         }
       }
-      if (midSep < 0) throw new IllegalArgumentException("No point separator in: " + s);
+      if (midSep < 0) {
+        throw new IllegalArgumentException("No point separator in: " + s);
+      }
       Point p1 = parsePoint(s.substring(0, midSep));
       Point p2 = parsePoint(s.substring(midSep + 1));
       return new Codec.ParsingResult<>(new Box(p1.x(), p1.y(), p2.x(), p2.y()), input.length());
@@ -95,7 +99,9 @@ final class BoxCodec implements Codec<Box> {
 
   @Override
   public Box random(Random r, int size) {
-    if (size == 0) return new Box(0.0, 0.0, 0.0, 0.0);
+    if (size == 0) {
+      return new Box(0.0, 0.0, 0.0, 0.0);
+    }
     return Box.of(
         (r.nextDouble() * 2 - 1) * size,
         (r.nextDouble() * 2 - 1) * size,
@@ -109,7 +115,9 @@ final class BoxCodec implements Codec<Box> {
       s = s.substring(1, s.length() - 1);
     }
     int comma = s.indexOf(',');
-    if (comma < 0) throw new IllegalArgumentException("No comma in point: " + s);
+    if (comma < 0) {
+      throw new IllegalArgumentException("No comma in point: " + s);
+    }
     double x = Double.parseDouble(s.substring(0, comma).trim());
     double y = Double.parseDouble(s.substring(comma + 1).trim());
     return new Point(x, y);

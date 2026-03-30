@@ -38,7 +38,9 @@ final class TimetzCodec implements Codec<Timetz> {
     if (frac > 0) {
       String f = String.format("%06d", frac);
       int end = f.length();
-      while (end > 0 && f.charAt(end - 1) == '0') end--;
+      while (end > 0 && f.charAt(end - 1) == '0') {
+        end--;
+      }
       sb.append('.').append(f, 0, end);
     }
 
@@ -113,7 +115,9 @@ final class TimetzCodec implements Codec<Timetz> {
 
   private static long parseTime(String s) {
     String[] parts = s.split(":");
-    if (parts.length < 3) throw new IllegalArgumentException("Invalid time: " + s);
+    if (parts.length < 3) {
+      throw new IllegalArgumentException("Invalid time: " + s);
+    }
     long hours = Long.parseLong(parts[0]);
     long minutes = Long.parseLong(parts[1]);
     String secPart = parts[2];
@@ -123,8 +127,12 @@ final class TimetzCodec implements Codec<Timetz> {
     if (dot >= 0) {
       seconds = Long.parseLong(secPart.substring(0, dot));
       String frac = secPart.substring(dot + 1);
-      while (frac.length() < 6) frac = frac + "0";
-      if (frac.length() > 6) frac = frac.substring(0, 6);
+      while (frac.length() < 6) {
+        frac = frac + "0";
+      }
+      if (frac.length() > 6) {
+        frac = frac.substring(0, 6);
+      }
       micros = Long.parseLong(frac);
     } else {
       seconds = Long.parseLong(secPart);
@@ -152,7 +160,9 @@ final class TimetzCodec implements Codec<Timetz> {
     int minutes = parts.length > 1 ? Integer.parseInt(parts[1]) : 0;
     int seconds = parts.length > 2 ? Integer.parseInt(parts[2]) : 0;
     int displayOffset = hours * 3600 + minutes * 60 + seconds;
-    if (sign == '-') displayOffset = -displayOffset;
+    if (sign == '-') {
+      displayOffset = -displayOffset;
+    }
     return -displayOffset; // invert for internal storage
   }
 }

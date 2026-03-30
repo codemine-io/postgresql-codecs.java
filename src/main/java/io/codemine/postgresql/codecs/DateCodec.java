@@ -60,7 +60,9 @@ final class DateCodec implements Codec<LocalDate> {
 
   @Override
   public LocalDate random(Random r, int size) {
-    if (size == 0) return PG_EPOCH;
+    if (size == 0) {
+      return PG_EPOCH;
+    }
     int bound = Math.min(size * 365, 3_652_425);
     int offset = r.nextInt(2 * bound + 1) - bound;
     return PG_EPOCH.plusDays(offset);

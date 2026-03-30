@@ -28,6 +28,7 @@ public record Bit(int length, byte[] data) {
     return sb.toString();
   }
 
+  /** Appends the bit string representation to the given builder. */
   public void write(StringBuilder sb) {
     for (int i = 0; i < length; i++) {
       int byteIndex = i / 8;

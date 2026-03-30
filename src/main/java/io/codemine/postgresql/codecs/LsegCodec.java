@@ -41,8 +41,12 @@ final class LsegCodec implements Codec<Lseg> {
     String s = input.subSequence(offset, input.length()).toString().trim();
     try {
       // Format: [(x1,y1),(x2,y2)]
-      if (s.startsWith("[")) s = s.substring(1);
-      if (s.endsWith("]")) s = s.substring(0, s.length() - 1);
+      if (s.startsWith("[")) {
+        s = s.substring(1);
+      }
+      if (s.endsWith("]")) {
+        s = s.substring(0, s.length() - 1);
+      }
       s = s.trim();
 
       // Find the comma between the two point literals: ),(
@@ -50,14 +54,18 @@ final class LsegCodec implements Codec<Lseg> {
       int depth = 0;
       for (int i = 0; i < s.length(); i++) {
         char c = s.charAt(i);
-        if (c == '(') depth++;
-        else if (c == ')') depth--;
-        else if (c == ',' && depth == 0) {
+        if (c == '(') {
+          depth++;
+        } else if (c == ')') {
+          depth--;
+        } else if (c == ',' && depth == 0) {
           midComma = i;
           break;
         }
       }
-      if (midComma < 0) throw new IllegalArgumentException("No point separator in: " + s);
+      if (midComma < 0) {
+        throw new IllegalArgumentException("No point separator in: " + s);
+      }
 
       Point p1 = parsePoint(s.substring(0, midComma));
       Point p2 = parsePoint(s.substring(midComma + 1));
@@ -83,7 +91,9 @@ final class LsegCodec implements Codec<Lseg> {
 
   @Override
   public Lseg random(Random r, int size) {
-    if (size == 0) return new Lseg(0.0, 0.0, 0.0, 0.0);
+    if (size == 0) {
+      return new Lseg(0.0, 0.0, 0.0, 0.0);
+    }
     return new Lseg(
         (r.nextDouble() * 2 - 1) * size,
         (r.nextDouble() * 2 - 1) * size,
@@ -97,7 +107,9 @@ final class LsegCodec implements Codec<Lseg> {
       s = s.substring(1, s.length() - 1);
     }
     int comma = s.indexOf(',');
-    if (comma < 0) throw new IllegalArgumentException("No comma in point: " + s);
+    if (comma < 0) {
+      throw new IllegalArgumentException("No comma in point: " + s);
+    }
     double x = Double.parseDouble(s.substring(0, comma).trim());
     double y = Double.parseDouble(s.substring(comma + 1).trim());
     return new Point(x, y);

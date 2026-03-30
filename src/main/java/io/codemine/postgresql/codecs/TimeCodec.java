@@ -85,7 +85,9 @@ final class TimeCodec implements Codec<LocalTime> {
     if (micros > 0) {
       String f = String.format("%06d", micros);
       int end = f.length();
-      while (end > 0 && f.charAt(end - 1) == '0') end--;
+      while (end > 0 && f.charAt(end - 1) == '0') {
+        end--;
+      }
       sb.append('.').append(f, 0, end);
     }
   }
@@ -111,8 +113,12 @@ final class TimeCodec implements Codec<LocalTime> {
       seconds = Long.parseLong(secPart.substring(0, dot));
       String frac = secPart.substring(dot + 1);
       // Pad to 6 digits
-      while (frac.length() < 6) frac = frac + "0";
-      if (frac.length() > 6) frac = frac.substring(0, 6);
+      while (frac.length() < 6) {
+        frac = frac + "0";
+      }
+      if (frac.length() > 6) {
+        frac = frac.substring(0, 6);
+      }
       micros = Long.parseLong(frac);
     } else {
       seconds = Long.parseLong(secPart);

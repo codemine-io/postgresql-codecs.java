@@ -28,7 +28,9 @@ final class PathCodec implements Codec<Path> {
   public void write(StringBuilder sb, Path value) {
     sb.append(value.closed() ? '(' : '[');
     for (int i = 0; i < value.points().size(); i++) {
-      if (i > 0) sb.append(',');
+      if (i > 0) {
+        sb.append(',');
+      }
       Point p = value.points().get(i);
       sb.append('(');
       sb.append(Double.toString(p.x()));
@@ -63,9 +65,11 @@ final class PathCodec implements Codec<Path> {
         int start = 0;
         for (int i = 0; i < s.length(); i++) {
           char c = s.charAt(i);
-          if (c == '(') depth++;
-          else if (c == ')') depth--;
-          else if (c == ',' && depth == 0) {
+          if (c == '(') {
+            depth++;
+          } else if (c == ')') {
+            depth--;
+          } else if (c == ',' && depth == 0) {
             points.add(parsePoint(s.substring(start, i).trim()));
             start = i + 1;
           }
@@ -121,7 +125,9 @@ final class PathCodec implements Codec<Path> {
       s = s.substring(1, s.length() - 1);
     }
     int comma = s.indexOf(',');
-    if (comma < 0) throw new IllegalArgumentException("No comma in point: " + s);
+    if (comma < 0) {
+      throw new IllegalArgumentException("No comma in point: " + s);
+    }
     double x = Double.parseDouble(s.substring(0, comma).trim());
     double y = Double.parseDouble(s.substring(comma + 1).trim());
     return new Point(x, y);

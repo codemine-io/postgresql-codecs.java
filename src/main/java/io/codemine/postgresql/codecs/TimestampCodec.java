@@ -42,7 +42,9 @@ final class TimestampCodec implements Codec<LocalDateTime> {
     if (microOfSecond > 0) {
       String f = String.format("%06d", microOfSecond);
       int end = f.length();
-      while (end > 0 && f.charAt(end - 1) == '0') end--;
+      while (end > 0 && f.charAt(end - 1) == '0') {
+        end--;
+      }
       sb.append('.').append(f, 0, end);
     }
   }
@@ -75,8 +77,12 @@ final class TimestampCodec implements Codec<LocalDateTime> {
       if (dot >= 0) {
         second = Integer.parseInt(secStr.substring(0, dot));
         String frac = secStr.substring(dot + 1);
-        while (frac.length() < 6) frac = frac + "0";
-        if (frac.length() > 6) frac = frac.substring(0, 6);
+        while (frac.length() < 6) {
+          frac = frac + "0";
+        }
+        if (frac.length() > 6) {
+          frac = frac.substring(0, 6);
+        }
         microOfSecond = Long.parseLong(frac);
       } else {
         second = Integer.parseInt(secStr);
@@ -111,7 +117,9 @@ final class TimestampCodec implements Codec<LocalDateTime> {
 
   @Override
   public LocalDateTime random(Random r, int size) {
-    if (size == 0) return LocalDateTime.of(2000, 1, 1, 0, 0, 0);
+    if (size == 0) {
+      return LocalDateTime.of(2000, 1, 1, 0, 0, 0);
+    }
     long bound = (long) size * 86_400_000_000L;
     long pgMicros = r.nextLong(-bound, bound + 1);
     return fromPgMicros(pgMicros);

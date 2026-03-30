@@ -65,10 +65,14 @@ final class LineCodec implements Codec<Line> {
 
   @Override
   public Line random(Random r, int size) {
-    if (size == 0) return new Line(1.0, 0.0, 0.0);
+    if (size == 0) {
+      return new Line(1.0, 0.0, 0.0);
+    }
     double a = (r.nextDouble() * 2 - 1) * size;
     double b = (r.nextDouble() * 2 - 1) * size;
-    if (a == 0 && b == 0) b = 1.0;
+    if (a == 0 && b == 0) {
+      b = 1.0;
+    }
     double c = (r.nextDouble() * 2 - 1) * size;
     return new Line(a, b, c);
   }

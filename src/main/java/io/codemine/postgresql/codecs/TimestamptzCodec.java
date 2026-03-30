@@ -46,7 +46,9 @@ final class TimestamptzCodec implements Codec<Instant> {
     if (microOfSecond > 0) {
       String f = String.format("%06d", microOfSecond);
       int end = f.length();
-      while (end > 0 && f.charAt(end - 1) == '0') end--;
+      while (end > 0 && f.charAt(end - 1) == '0') {
+        end--;
+      }
       sb.append('.').append(f, 0, end);
     }
     sb.append("+00");
@@ -88,8 +90,12 @@ final class TimestamptzCodec implements Codec<Instant> {
       if (dot >= 0) {
         second = Integer.parseInt(secStr.substring(0, dot));
         String frac = secStr.substring(dot + 1);
-        while (frac.length() < 6) frac = frac + "0";
-        if (frac.length() > 6) frac = frac.substring(0, 6);
+        while (frac.length() < 6) {
+          frac = frac + "0";
+        }
+        if (frac.length() > 6) {
+          frac = frac.substring(0, 6);
+        }
         microOfSecond = Long.parseLong(frac);
       } else {
         second = Integer.parseInt(secStr);
@@ -132,7 +138,9 @@ final class TimestamptzCodec implements Codec<Instant> {
 
   @Override
   public Instant random(Random r, int size) {
-    if (size == 0) return Instant.ofEpochSecond(PG_EPOCH_UNIX_SECONDS);
+    if (size == 0) {
+      return Instant.ofEpochSecond(PG_EPOCH_UNIX_SECONDS);
+    }
     long bound = (long) size * 86_400_000_000L;
     long pgMicros = r.nextLong(-bound, bound + 1);
     long unixMicros = pgMicros + PG_EPOCH_UNIX_MICROS;
@@ -160,7 +168,9 @@ final class TimestamptzCodec implements Codec<Instant> {
     int minutes = parts.length > 1 ? Integer.parseInt(parts[1]) : 0;
     int seconds = parts.length > 2 ? Integer.parseInt(parts[2]) : 0;
     int offset = hours * 3600 + minutes * 60 + seconds;
-    if (sign == '-') offset = -offset;
+    if (sign == '-') {
+      offset = -offset;
+    }
     return offset;
   }
 }

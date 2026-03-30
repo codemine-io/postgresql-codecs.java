@@ -28,7 +28,6 @@ final class IntervalCodec implements Codec<Interval> {
     int years = months / 12;
     int mons = months % 12;
     int days = value.day();
-    long time = value.time();
 
     boolean hasParts = false;
 
@@ -37,17 +36,24 @@ final class IntervalCodec implements Codec<Interval> {
       hasParts = true;
     }
     if (mons != 0) {
-      if (hasParts) sb.append(' ');
+      if (hasParts) {
+        sb.append(' ');
+      }
       sb.append(mons).append(mons == 1 ? " mon" : " mons");
       hasParts = true;
     }
     if (days != 0) {
-      if (hasParts) sb.append(' ');
+      if (hasParts) {
+        sb.append(' ');
+      }
       sb.append(days).append(days == 1 ? " day" : " days");
       hasParts = true;
     }
+    long time = value.time();
     if (time != 0 || !hasParts) {
-      if (hasParts) sb.append(' ');
+      if (hasParts) {
+        sb.append(' ');
+      }
       writeIntervalTime(sb, time);
     }
   }
@@ -97,7 +103,9 @@ final class IntervalCodec implements Codec<Interval> {
 
   @Override
   public Interval random(Random r, int size) {
-    if (size == 0) return new Interval(0, 0, 0);
+    if (size == 0) {
+      return new Interval(0, 0, 0);
+    }
     long timeBound = (long) size * 3_600_000_000L;
     long time = r.nextLong(-timeBound, timeBound + 1);
     int day = r.nextInt(2 * size + 1) - size;
@@ -122,7 +130,9 @@ final class IntervalCodec implements Codec<Interval> {
     if (frac > 0) {
       String f = String.format("%06d", frac);
       int end = f.length();
-      while (end > 0 && f.charAt(end - 1) == '0') end--;
+      while (end > 0 && f.charAt(end - 1) == '0') {
+        end--;
+      }
       sb.append('.').append(f, 0, end);
     }
   }
@@ -173,7 +183,9 @@ final class IntervalCodec implements Codec<Interval> {
   /** Parses a time component like "04:05:06.789" or "-04:05:06". */
   private static long parseIntervalTime(String s) {
     boolean negative = s.startsWith("-");
-    if (negative) s = s.substring(1);
+    if (negative) {
+      s = s.substring(1);
+    }
     String[] parts = s.split(":");
     long hours = Long.parseLong(parts[0]);
     long minutes = Long.parseLong(parts[1]);
@@ -184,8 +196,12 @@ final class IntervalCodec implements Codec<Interval> {
     if (dot >= 0) {
       seconds = Long.parseLong(secPart.substring(0, dot));
       String frac = secPart.substring(dot + 1);
-      while (frac.length() < 6) frac = frac + "0";
-      if (frac.length() > 6) frac = frac.substring(0, 6);
+      while (frac.length() < 6) {
+        frac = frac + "0";
+      }
+      if (frac.length() > 6) {
+        frac = frac.substring(0, 6);
+      }
       micros = Long.parseLong(frac);
     } else {
       seconds = Long.parseLong(secPart);

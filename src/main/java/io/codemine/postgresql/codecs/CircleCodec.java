@@ -45,10 +45,10 @@ final class CircleCodec implements Codec<Circle> {
       // Now: (x,y),r — find the closing paren of the point
       int closeParen = s.indexOf(')');
       String pointStr = s.substring(0, closeParen + 1);
-      String rStr = s.substring(closeParen + 2).trim();
+      String radiusStr = s.substring(closeParen + 2).trim();
       Point center = parsePoint(pointStr);
-      double r = Double.parseDouble(rStr);
-      return new Codec.ParsingResult<>(new Circle(center.x(), center.y(), r), input.length());
+      double radius = Double.parseDouble(radiusStr);
+      return new Codec.ParsingResult<>(new Circle(center.x(), center.y(), radius), input.length());
     } catch (Exception e) {
       throw new Codec.DecodingException(input, offset, "Invalid circle: " + s);
     }
@@ -68,7 +68,9 @@ final class CircleCodec implements Codec<Circle> {
 
   @Override
   public Circle random(Random r, int size) {
-    if (size == 0) return new Circle(0.0, 0.0, 0.0);
+    if (size == 0) {
+      return new Circle(0.0, 0.0, 0.0);
+    }
     return new Circle(
         (r.nextDouble() * 2 - 1) * size, (r.nextDouble() * 2 - 1) * size, r.nextDouble() * size);
   }
@@ -79,7 +81,9 @@ final class CircleCodec implements Codec<Circle> {
       s = s.substring(1, s.length() - 1);
     }
     int comma = s.indexOf(',');
-    if (comma < 0) throw new IllegalArgumentException("No comma in point: " + s);
+    if (comma < 0) {
+      throw new IllegalArgumentException("No comma in point: " + s);
+    }
     double x = Double.parseDouble(s.substring(0, comma).trim());
     double y = Double.parseDouble(s.substring(comma + 1).trim());
     return new Point(x, y);

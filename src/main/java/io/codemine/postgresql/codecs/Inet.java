@@ -12,8 +12,10 @@ import java.io.ByteArrayOutputStream;
  */
 public sealed interface Inet permits Inet.V4, Inet.V6 {
 
+  /** Appends the PostgreSQL text representation of this address to {@code sb}. */
   void write(StringBuilder sb);
 
+  /** Encodes this address in PostgreSQL binary wire format into {@code out}. */
   void encodeInBinary(ByteArrayOutputStream out);
 
   /**

@@ -56,7 +56,9 @@ final class PointCodec implements Codec<Point> {
 
   @Override
   public Point random(Random r, int size) {
-    if (size == 0) return new Point(0.0, 0.0);
+    if (size == 0) {
+      return new Point(0.0, 0.0);
+    }
     return new Point(finiteDouble(r, size), finiteDouble(r, size));
   }
 
@@ -66,7 +68,9 @@ final class PointCodec implements Codec<Point> {
       s = s.substring(1, s.length() - 1);
     }
     int comma = s.indexOf(',');
-    if (comma < 0) throw new IllegalArgumentException("No comma in point: " + s);
+    if (comma < 0) {
+      throw new IllegalArgumentException("No comma in point: " + s);
+    }
     double x = Double.parseDouble(s.substring(0, comma).trim());
     double y = Double.parseDouble(s.substring(comma + 1).trim());
     return new Point(x, y);

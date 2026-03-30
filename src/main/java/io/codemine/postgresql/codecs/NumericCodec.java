@@ -53,16 +53,22 @@ final class NumericCodec implements Codec<BigDecimal> {
     int scale = abs.scale();
     short dscale = (short) Math.max(scale, 0);
 
-    // Get the unscaled value and compute base-10000 digits.
-    BigInteger unscaled = abs.movePointRight(adjustScaleUp(scale)).unscaledValue();
+    // Pad scale up to a multiple of 4 for base-10000 alignment.
+    int paddedScale = scale <= 0 ? 0 : ((scale + 3) / 4) * 4;
+
+    // Multiply by 10^paddedScale to get an integer whose base-10000 digits
+    // directly represent the digit array of the PostgreSQL numeric.
+    BigInteger scaledInt = abs.scaleByPowerOfTen(paddedScale).toBigIntegerExact();
 
     // Compute base-10000 digits.
-    short[] digits = toBase10000(unscaled);
+    short[] digits = toBase10000(scaledInt);
     short ndigits = (short) digits.length;
 
-    // Weight: number of base-10000 digits before the decimal point minus 1.
-    int integerDigitCount = integerBase10000Digits(abs);
-    short weight = (short) (integerDigitCount - 1);
+    // Weight: the first digit sits at position NBASE^weight.
+    // scaledInt = value * NBASE^(paddedScale/4), so
+    // weight = ndigits - 1 - (paddedScale / 4).
+    int fractionalPositions = paddedScale / 4;
+    short weight = ndigits == 0 ? (short) 0 : (short) (ndigits - 1 - fractionalPositions);
 
     // Strip trailing zero digits.
     int effectiveNdigits = ndigits;
@@ -129,28 +135,6 @@ final class NumericCodec implements Codec<BigDecimal> {
   private static void writeShort(ByteArrayOutputStream out, short value) {
     out.write((value >>> 8) & 0xFF);
     out.write(value & 0xFF);
-  }
-
-  /**
-   * Returns how many base-10000 digits are needed for the integer part of the given non-negative
-   * decimal.
-   */
-  private static int integerBase10000Digits(BigDecimal abs) {
-    BigInteger intPart = abs.toBigInteger();
-    if (intPart.signum() == 0) {
-      return 0;
-    }
-    int decimalDigits = intPart.toString().length();
-    return (decimalDigits + 3) / 4;
-  }
-
-  /** Adjusts the scale up so that it is a multiple of 4 (for base-10000 alignment). */
-  private static int adjustScaleUp(int scale) {
-    if (scale <= 0) {
-      return 0;
-    }
-    int remainder = scale % 4;
-    return remainder == 0 ? scale : scale + (4 - remainder);
   }
 
   /**

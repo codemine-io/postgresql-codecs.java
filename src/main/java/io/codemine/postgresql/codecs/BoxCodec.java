@@ -22,6 +22,15 @@ final class BoxCodec implements Codec<Box> {
     return 1020;
   }
 
+  /**
+   * PostgreSQL {@code box[]} uses {@code ;} as the array element delimiter because the box
+   * representation itself already uses commas for point coordinates.
+   */
+  @Override
+  public char arrayElementDelimiter() {
+    return ';';
+  }
+
   @Override
   public void write(StringBuilder sb, Box value) {
     // Format: (x1,y1),(x2,y2) — no surrounding brackets

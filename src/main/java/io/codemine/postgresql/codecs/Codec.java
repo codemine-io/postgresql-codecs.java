@@ -107,6 +107,15 @@ public interface Codec<A> {
   }
 
   /**
+   * Returns the delimiter character used to separate elements in a PostgreSQL array literal for
+   * this type. Most types use {@code ','}, but {@code box} uses {@code ';'} because the box
+   * representation itself contains commas.
+   */
+  default char arrayElementDelimiter() {
+    return ',';
+  }
+
+  /**
    * Returns the PostgreSQL base-type OID, or {@code 0} if not statically known (e.g. user-defined
    * composite types).
    *

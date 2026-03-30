@@ -149,7 +149,28 @@
                 <artifactId>spotbugs-maven-plugin</artifactId>
                 <version>4.9.8.0</version>
             </plugin>
+
+            <!-- Javadoc (documentation generation) -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.6.3</version>
+                <configuration>
+                    <release>21</release>
+                    <additionalJOptions>
+                        <additionalJOption>--enable-preview</additionalJOption>
+                    </additionalJOptions>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
+
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>GitHub Packages</name>
+            <url>https://maven.pkg.github.com/nikita-volkov/postgresql-codecs.java</url>
+        </repository>
+    </distributionManagement>
 
 </project>

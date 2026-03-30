@@ -17,13 +17,50 @@ final class InetCodec implements Codec<InetCodec.Inet> {
    */
   public sealed interface Inet permits Inet.V4, Inet.V6 {
 
+    void write(StringBuilder sb);
+
+    void encodeInBinary(ByteArrayOutputStream out);
+
     /**
      * IPv4 host address with optional subnet mask.
      *
      * @param address IPv4 address as a 32-bit big-endian word.
      * @param netmask Network mask length in the range 0–32.
      */
-    record V4(int address, byte netmask) implements Inet {}
+    record V4(int address, byte netmask) implements Inet {
+      @Override
+      public void write(StringBuilder sb) {
+        sb.append((address >>> 24) & 0xFF);
+        sb.append('.');
+        sb.append((address >>> 16) & 0xFF);
+        sb.append('.');
+        sb.append((address >>> 8) & 0xFF);
+        sb.append('.');
+        sb.append(address & 0xFF);
+        if ((netmask & 0xff) != 32) {
+          sb.append('/').append(netmask & 0xff);
+        }
+      }
+
+      @Override
+      public void encodeInBinary(ByteArrayOutputStream out) {
+        out.write(2); // IPv4 address family
+        out.write(netmask);
+        out.write(0); // is_cidr = 0 for inet
+        out.write(4); // address length
+        out.write((address >>> 24) & 0xFF);
+        out.write((address >>> 16) & 0xFF);
+        out.write((address >>> 8) & 0xFF);
+        out.write(address & 0xFF);
+      }
+
+      @Override
+      public String toString() {
+        StringBuilder sb = new StringBuilder();
+        write(sb);
+        return sb.toString();
+      }
+    }
 
     /**
      * IPv6 host address with optional subnet mask.
@@ -34,40 +71,9 @@ final class InetCodec implements Codec<InetCodec.Inet> {
      * @param w4 Fourth 32 bits of the IPv6 address in big-endian order.
      * @param netmask Network mask length in the range 0–128.
      */
-    record V6(int w1, int w2, int w3, int w4, byte netmask) implements Inet {}
-  }
-
-  @Override
-  public String name() {
-    return "inet";
-  }
-
-  @Override
-  public int scalarOid() {
-    return 869;
-  }
-
-  @Override
-  public int arrayOid() {
-    return 1041;
-  }
-
-  @Override
-  public void write(StringBuilder sb, Inet value) {
-    switch (value) {
-      case Inet.V4(int addr, byte netmask) -> {
-        sb.append((addr >>> 24) & 0xFF);
-        sb.append('.');
-        sb.append((addr >>> 16) & 0xFF);
-        sb.append('.');
-        sb.append((addr >>> 8) & 0xFF);
-        sb.append('.');
-        sb.append(addr & 0xFF);
-        if ((netmask & 0xff) != 32) {
-          sb.append('/').append(netmask & 0xff);
-        }
-      }
-      case Inet.V6(int w1, int w2, int w3, int w4, byte netmask) -> {
+    record V6(int w1, int w2, int w3, int w4, byte netmask) implements Inet {
+      @Override
+      public void write(StringBuilder sb) {
         // Formats a 128-bit IPv6 address (stored as four 32-bit words) as compressed text per
         // RFC 5952, e.g. {@code ::1} instead of {@code 0:0:0:0:0:0:0:1}.
 
@@ -122,35 +128,9 @@ final class InetCodec implements Codec<InetCodec.Inet> {
           sb.append('/').append(netmask & 0xff);
         }
       }
-      default -> throw new IllegalStateException("Unreachable: unknown Inet variant");
-    }
-  }
 
-  @Override
-  public Codec.ParsingResult<Inet> parse(CharSequence input, int offset)
-      throws Codec.ParseException {
-    String s = input.subSequence(offset, input.length()).toString().trim();
-    try {
-      return new Codec.ParsingResult<>(parseInet(s), input.length());
-    } catch (Exception e) {
-      throw new Codec.ParseException(input, offset, "Invalid inet: " + s);
-    }
-  }
-
-  @Override
-  public void encodeInBinary(Inet value, ByteArrayOutputStream out) {
-    switch (value) {
-      case Inet.V4(int addr, byte netmask) -> {
-        out.write(2); // IPv4 address family
-        out.write(netmask);
-        out.write(0); // is_cidr = 0 for inet
-        out.write(4); // address length
-        out.write((addr >>> 24) & 0xFF);
-        out.write((addr >>> 16) & 0xFF);
-        out.write((addr >>> 8) & 0xFF);
-        out.write(addr & 0xFF);
-      }
-      case Inet.V6(int w1, int w2, int w3, int w4, byte netmask) -> {
+      @Override
+      public void encodeInBinary(ByteArrayOutputStream out) {
         out.write(3); // IPv6 address family for INET
         out.write(netmask);
         out.write(0); // is_cidr = 0 for inet
@@ -172,8 +152,50 @@ final class InetCodec implements Codec<InetCodec.Inet> {
         out.write((w4 >>> 8) & 0xFF);
         out.write(w4 & 0xFF);
       }
-      default -> throw new IllegalStateException("Unreachable: unknown Inet variant");
+
+      @Override
+      public String toString() {
+        StringBuilder sb = new StringBuilder();
+        write(sb);
+        return sb.toString();
+      }
     }
+  }
+
+  @Override
+  public String name() {
+    return "inet";
+  }
+
+  @Override
+  public int scalarOid() {
+    return 869;
+  }
+
+  @Override
+  public int arrayOid() {
+    return 1041;
+  }
+
+  @Override
+  public void write(StringBuilder sb, Inet value) {
+    value.write(sb);
+  }
+
+  @Override
+  public Codec.ParsingResult<Inet> parse(CharSequence input, int offset)
+      throws Codec.ParseException {
+    String s = input.subSequence(offset, input.length()).toString().trim();
+    try {
+      return new Codec.ParsingResult<>(parseInet(s), input.length());
+    } catch (Exception e) {
+      throw new Codec.ParseException(input, offset, "Invalid inet: " + s);
+    }
+  }
+
+  @Override
+  public void encodeInBinary(Inet value, ByteArrayOutputStream out) {
+    value.encodeInBinary(out);
   }
 
   @Override

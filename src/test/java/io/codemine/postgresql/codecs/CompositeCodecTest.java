@@ -78,7 +78,7 @@ class CompositeCodecTest {
   @Group
   class SimplePointTests extends CodecTestBase<Point> {
     SimplePointTests() {
-      super(POINT_CODEC, Point.class);
+      super(POINT_CODEC);
     }
   }
 
@@ -89,7 +89,7 @@ class CompositeCodecTest {
   @Group
   class NestedSegmentTests extends CodecTestBase<Segment> {
     NestedSegmentTests() {
-      super(SEGMENT_CODEC, Segment.class);
+      super(SEGMENT_CODEC);
     }
   }
 
@@ -100,7 +100,7 @@ class CompositeCodecTest {
   @Group
   class CompositeWithArrayTests extends CodecTestBase<TaggedData> {
     CompositeWithArrayTests() {
-      super(TAGGED_DATA_CODEC, TaggedData.class);
+      super(TAGGED_DATA_CODEC);
     }
   }
 
@@ -111,7 +111,7 @@ class CompositeCodecTest {
   @Group
   class NestedCompositeWithArrayTests extends CodecTestBase<AnnotatedSegment> {
     NestedCompositeWithArrayTests() {
-      super(ANNOTATED_CODEC, AnnotatedSegment.class);
+      super(ANNOTATED_CODEC);
     }
   }
 }

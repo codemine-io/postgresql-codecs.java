@@ -12,14 +12,12 @@ import net.jqwik.api.Provide;
 abstract class CodecTestBase<A> {
 
   private final Codec<A> codec;
-  private final Class<A> type;
   private final Codec<List<A>> arrayCodec;
   private final Codec<List<List<A>>> arrayArrayCodec;
 
   @SuppressWarnings("unchecked")
-  protected CodecTestBase(Codec<A> codec, Class<A> type) {
+  protected CodecTestBase(Codec<A> codec) {
     this.codec = codec;
-    this.type = type;
     this.arrayCodec = codec.inDim();
     this.arrayArrayCodec = arrayCodec.inDim();
   }

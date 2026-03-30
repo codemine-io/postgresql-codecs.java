@@ -49,11 +49,16 @@ final class TextCodec implements Codec<String> {
 
   @Override
   public String random(Random r, int size) {
-    String chars = "abcdefghijklmnopqABCDEF0123,()\"\\";
-    int len = size == 0 ? 0 : r.nextInt(size + 1);
-    StringBuilder sb = new StringBuilder(len);
-    for (int i = 0; i < len; i++) {
-      sb.append(chars.charAt(r.nextInt(chars.length())));
+    // Valid code points: U+0001..U+D7FF and U+E000..U+10FFFF.
+    // U+0000 is excluded because PostgreSQL text cannot contain null bytes.
+    // U+D800..U+DFFF are excluded because they are surrogates, invalid in UTF-8.
+    final int range1Size = 0xD7FF; // U+0001..U+D7FF → 55295 code points
+    final int totalValid = range1Size + (0x10FFFF - 0xE000 + 1); // 1112063 code points
+    StringBuilder sb = new StringBuilder(size);
+    for (int i = 0; i < size; i++) {
+      int n = r.nextInt(totalValid);
+      int codePoint = (n < range1Size) ? n + 1 : n + (0xE000 - range1Size);
+      sb.appendCodePoint(codePoint);
     }
     return sb.toString();
   }

@@ -33,7 +33,8 @@ abstract class CodecITBase<A> {
   static final PostgreSQLContainer<?> container;
 
   static {
-    container = new PostgreSQLContainer<>("postgres:18");
+    container =
+        new PostgreSQLContainer<>("postgres:18").withCommand("postgres -c max_connections=300");
     container.start();
   }
 
@@ -208,8 +209,7 @@ abstract class CodecITBase<A> {
   }
 
   private A roundtripViaR2dbc(Connection r2conn, A value) {
-    return Flux.from(
-            r2conn.createStatement("SELECT $1::" + codec.typeSig()).bind(0, value).execute())
+    return Flux.from(r2conn.createStatement("SELECT $1").bind(0, value).execute())
         .flatMap(result -> result.map((row, meta) -> row.get(0, type)))
         .single()
         .block();
@@ -218,11 +218,7 @@ abstract class CodecITBase<A> {
   @SuppressWarnings("unchecked")
   private List<A> roundtripArrayViaR2dbc(Connection r2conn, List<A> value) {
     return (List<A>)
-        Flux.from(
-                r2conn
-                    .createStatement("SELECT $1::" + arrayCodec.typeSig())
-                    .bind(0, value)
-                    .execute())
+        Flux.from(r2conn.createStatement("SELECT $1").bind(0, value).execute())
             .flatMap(result -> result.map((row, meta) -> row.get(0, List.class)))
             .single()
             .block();
@@ -306,7 +302,7 @@ abstract class CodecITBase<A> {
 
   @Property(tries = 100)
   void roundtripsInTextToTextViaPgjdbc(@ForAll("values") A value) throws Exception {
-    try (var ps = pgjdbcConnection.prepareStatement("SELECT ?::" + codec.typeSig())) {
+    try (var ps = pgjdbcConnection.prepareStatement("SELECT ?")) {
       if (value != null) {
         PGobject obj = new PGobject();
         obj.setType(codec.typeSig());
@@ -369,7 +365,7 @@ abstract class CodecITBase<A> {
 
   @Property(tries = 100)
   void arrayRoundtripsInTextToTextViaPgjdbc(@ForAll("arrayValues") List<A> value) throws Exception {
-    try (var ps = pgjdbcConnection.prepareStatement("SELECT ?::" + arrayCodec.typeSig())) {
+    try (var ps = pgjdbcConnection.prepareStatement("SELECT ?")) {
       if (value != null) {
         PGobject obj = new PGobject();
         obj.setType(arrayCodec.typeSig());

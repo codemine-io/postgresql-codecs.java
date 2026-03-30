@@ -2,6 +2,7 @@ package io.codemine.postgresql.codecs;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -65,14 +66,20 @@ public final class EnumCodec<E> implements Codec<E> {
 
   @Override
   public void encodeInBinary(E value, ByteArrayOutputStream out) {
-    // TODO Auto-generated method stub
-    throw new UnsupportedOperationException("Unimplemented method 'encodeInBinary'");
+    byte[] bytes = pgLabels.get(value).getBytes(StandardCharsets.UTF_8);
+    out.write(bytes, 0, bytes.length);
   }
 
   @Override
   public E decodeInBinary(ByteBuffer buf, int length) throws DecodingException {
-    // TODO Auto-generated method stub
-    throw new UnsupportedOperationException("Unimplemented method 'decodeInBinary'");
+    byte[] bytes = new byte[length];
+    buf.get(bytes);
+    String label = new String(bytes, StandardCharsets.UTF_8);
+    E value = byPgLabel.get(label);
+    if (value == null) {
+      throw new DecodingException("Unknown " + pgName + " value: " + label);
+    }
+    return value;
   }
 
   @Override

@@ -3,6 +3,7 @@ package io.codemine.postgresql.codecs;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.codemine.postgresql.TextInBinaryOutR2dbcCodec;
 import io.codemine.postgresql.TextInTextOutR2dbcCodec;
 import io.r2dbc.postgresql.PostgresqlConnectionConfiguration;
 import io.r2dbc.postgresql.PostgresqlConnectionFactory;
@@ -58,6 +59,7 @@ class EnumCodecIT {
 
   private final java.sql.Connection pgjdbcConn;
   private final Connection textInTextOutConn;
+  private final Connection textInBinaryOutConn;
 
   EnumCodecIT() {
     try {
@@ -73,7 +75,7 @@ class EnumCodecIT {
         }
       }
 
-      var moodR2dbcCodec = new TextInTextOutR2dbcCodec<>(MOOD_CODEC, Mood.class);
+      var textTextCodec = new TextInTextOutR2dbcCodec<>(MOOD_CODEC, Mood.class);
       textInTextOutConn =
           Mono.from(
                   new PostgresqlConnectionFactory(
@@ -85,7 +87,27 @@ class EnumCodecIT {
                               .database(CONTAINER.getDatabaseName())
                               .codecRegistrar(
                                   (c, allocator, registry) -> {
-                                    registry.addFirst(moodR2dbcCodec);
+                                    registry.addFirst(textTextCodec);
+                                    return Mono.empty();
+                                  })
+                              .build())
+                      .create())
+              .block();
+
+      var textBinaryCodec = new TextInBinaryOutR2dbcCodec<>(MOOD_CODEC, Mood.class);
+      textInBinaryOutConn =
+          Mono.from(
+                  new PostgresqlConnectionFactory(
+                          PostgresqlConnectionConfiguration.builder()
+                              .host(CONTAINER.getHost())
+                              .port(CONTAINER.getMappedPort(5432))
+                              .username(CONTAINER.getUsername())
+                              .password(CONTAINER.getPassword())
+                              .database(CONTAINER.getDatabaseName())
+                              .forceBinary(true)
+                              .codecRegistrar(
+                                  (c, allocator, registry) -> {
+                                    registry.addFirst(textBinaryCodec);
                                     return Mono.empty();
                                   })
                               .build())
@@ -116,6 +138,20 @@ class EnumCodecIT {
         assertTrue(rs.next(), "enum type test_mood not found in pg_type");
       }
     }
+  }
+
+  @Property(tries = 50)
+  void roundtripsInTextToBinaryViaR2dbc(@ForAll("moods") Mood value) {
+    Mood decoded =
+        Flux.from(
+                textInBinaryOutConn
+                    .createStatement("SELECT $1::test_mood")
+                    .bind(0, value)
+                    .execute())
+            .flatMap(result -> result.map((row, meta) -> row.get(0, Mood.class)))
+            .single()
+            .block();
+    assertEquals(value, decoded);
   }
 
   @Property(tries = 50)

@@ -1,5 +1,6 @@
 package io.codemine.postgresql.codecs;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -28,6 +29,38 @@ public interface Codec<A> {
   Codec<String> TEXT = new TextCodec();
   Codec<Inet> INET = new InetCodec();
   Codec<Macaddr> MACADDR = new MacaddrCodec();
+  Codec<Boolean> BOOL = new BoolCodec();
+  Codec<Short> INT2 = new Int2Codec();
+  Codec<Long> INT8 = new Int8Codec();
+  Codec<Float> FLOAT4 = new Float4Codec();
+  Codec<Double> FLOAT8 = new Float8Codec();
+  Codec<java.math.BigDecimal> NUMERIC = new NumericCodec();
+  Codec<Bytea> BYTEA = new ByteaCodec();
+  Codec<java.util.UUID> UUID = new UuidCodec();
+  Codec<JsonNode> JSON = new JsonCodec();
+  Codec<JsonNode> JSONB = new JsonbCodec();
+  Codec<String> VARCHAR = new VarcharCodec();
+  Codec<String> BPCHAR = new BpcharCodec();
+  Codec<Byte> CHAR = new CharCodec();
+  Codec<Integer> OID = new OidCodec();
+  Codec<Long> MONEY = new MoneyCodec();
+  Codec<java.time.LocalDate> DATE = new DateCodec();
+  Codec<java.time.LocalTime> TIME = new TimeCodec();
+  Codec<Timetz> TIMETZ = new TimetzCodec();
+  Codec<java.time.LocalDateTime> TIMESTAMP = new TimestampCodec();
+  Codec<java.time.Instant> TIMESTAMPTZ = new TimestamptzCodec();
+  Codec<Interval> INTERVAL = new IntervalCodec();
+  Codec<Point> POINT = new PointCodec();
+  Codec<Line> LINE = new LineCodec();
+  Codec<Lseg> LSEG = new LsegCodec();
+  Codec<Box> BOX = new BoxCodec();
+  Codec<Path> PATH = new PathCodec();
+  Codec<Polygon> POLYGON = new PolygonCodec();
+  Codec<Circle> CIRCLE = new CircleCodec();
+  Codec<Inet> CIDR = new CidrCodec();
+  Codec<Macaddr8> MACADDR8 = new Macaddr8Codec();
+  Codec<Bit> BIT = new BitCodec();
+  Codec<Bit> VARBIT = new VarbitCodec();
 
   // -----------------------------------------------------------------------
   // Type metadata
@@ -75,6 +108,15 @@ public interface Codec<A> {
   }
 
   /**
+   * Returns the delimiter character used to separate elements in a PostgreSQL array literal for
+   * this type. Most types use {@code ','}, but {@code box} uses {@code ';'} because the box
+   * representation itself contains commas.
+   */
+  default char arrayElementDelimiter() {
+    return ',';
+  }
+
+  /**
    * Returns the PostgreSQL base-type OID, or {@code 0} if not statically known (e.g. user-defined
    * composite types).
    *
@@ -90,10 +132,15 @@ public interface Codec<A> {
     return 0;
   }
 
+  /**
+   * Returns the OID for this type: array OID when {@link #dimensions()} {@code > 0}, else scalar
+   * OID.
+   */
   default int oid() {
     return dimensions() > 0 ? arrayOid() : scalarOid();
   }
 
+  /** Returns the JDBC {@link java.sql.Types} constant that best represents this PostgreSQL type. */
   default int jdbcType() {
     return java.sql.Types.OTHER;
   }

@@ -4,19 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Map;
-import net.jqwik.api.Arbitraries;
-import net.jqwik.api.Arbitrary;
-import net.jqwik.api.ForAll;
-import net.jqwik.api.Property;
-import net.jqwik.api.Provide;
-import net.jqwik.api.Shrinkable;
 import org.junit.jupiter.api.Test;
 
-/**
- * Unit tests for {@link EnumCodec}, covering text-format round-trips (binary is not yet
- * implemented).
- */
-class EnumCodecTest {
+/** Unit tests for {@link EnumCodec}, covering both text and binary round-trips. */
+public class EnumCodecTest extends CodecTestBase<EnumCodecTest.Color> {
 
   // -----------------------------------------------------------------------
   // Test enum and codec
@@ -27,31 +18,17 @@ class EnumCodecTest {
     BLUE
   }
 
-  private static final EnumCodec<Color> COLOR_CODEC =
+  static final EnumCodec<Color> COLOR_CODEC =
       new EnumCodec<>(
           "", "color", Map.of(Color.RED, "red", Color.GREEN, "green", Color.BLUE, "blue"));
 
-  // -----------------------------------------------------------------------
-  // Providers
-  // -----------------------------------------------------------------------
-  @Provide
-  Arbitrary<Color> colors() {
-    return Arbitraries.fromGeneratorWithSize(
-        size -> r -> Shrinkable.unshrinkable(COLOR_CODEC.random(r, size)));
+  public EnumCodecTest() {
+    super(COLOR_CODEC);
   }
 
   // -----------------------------------------------------------------------
-  // Text-format round-trip
+  // Label-specific assertions
   // -----------------------------------------------------------------------
-  @Property(tries = 100)
-  void decodesEncodedInText(@ForAll("colors") Color value) throws Exception {
-    StringBuilder sb = new StringBuilder();
-    COLOR_CODEC.write(sb, value);
-    String encoded = sb.toString();
-    Color decoded = COLOR_CODEC.parse(encoded, 0).value;
-    assertEquals(value, decoded, "text round-trip failed for " + value);
-  }
-
   @Test
   void writesCorrectLabels() throws Exception {
     assertEquals("red", writeToString(Color.RED));
@@ -69,13 +46,6 @@ class EnumCodecTest {
   @Test
   void parseThrowsOnUnknownLabel() {
     assertThrows(Codec.DecodingException.class, () -> COLOR_CODEC.parse("yellow", 0));
-  }
-
-  @Test
-  void binaryUnsupported() {
-    assertThrows(
-        UnsupportedOperationException.class,
-        () -> COLOR_CODEC.encodeInBinary(Color.RED, new java.io.ByteArrayOutputStream()));
   }
 
   @Test

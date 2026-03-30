@@ -1,6 +1,6 @@
 package io.codemine.postgresql;
 
-import io.codemine.postgresql.codecs.Codec.ParseException;
+import io.codemine.postgresql.codecs.Codec.DecodingException;
 import io.netty.buffer.Unpooled;
 import io.r2dbc.postgresql.client.EncodedParameter;
 import io.r2dbc.postgresql.message.Format;
@@ -84,7 +84,7 @@ public class TextInBinaryOutR2dbcCodec<A> implements io.r2dbc.postgresql.codec.C
     buffer.readBytes(bytes);
     try {
       return codec.decodeInBinary(ByteBuffer.wrap(bytes).order(ByteOrder.BIG_ENDIAN), bytes.length);
-    } catch (ParseException e) {
+    } catch (DecodingException e) {
       throw new RuntimeException(e);
     }
   }

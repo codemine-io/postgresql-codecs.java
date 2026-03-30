@@ -36,7 +36,8 @@ final class MappedCodec<A, B> implements Codec<B> {
   }
 
   @Override
-  public Codec.ParsingResult<B> parse(CharSequence input, int offset) throws Codec.ParseException {
+  public Codec.ParsingResult<B> parse(CharSequence input, int offset)
+      throws Codec.DecodingException {
     var result = codec.parse(input, offset);
     return new Codec.ParsingResult<>(toMapped.apply(result.value), result.nextOffset);
   }
@@ -47,7 +48,7 @@ final class MappedCodec<A, B> implements Codec<B> {
   }
 
   @Override
-  public B decodeInBinary(ByteBuffer buf, int length) throws Codec.ParseException {
+  public B decodeInBinary(ByteBuffer buf, int length) throws Codec.DecodingException {
     return toMapped.apply(codec.decodeInBinary(buf, length));
   }
 

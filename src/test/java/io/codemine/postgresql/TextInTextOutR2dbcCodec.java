@@ -1,6 +1,6 @@
 package io.codemine.postgresql;
 
-import io.codemine.postgresql.codecs.Codec.ParseException;
+import io.codemine.postgresql.codecs.Codec.DecodingException;
 import io.netty.buffer.Unpooled;
 import io.r2dbc.postgresql.client.EncodedParameter;
 import io.r2dbc.postgresql.message.Format;
@@ -83,7 +83,7 @@ public class TextInTextOutR2dbcCodec<A> implements io.r2dbc.postgresql.codec.Cod
     String text = new String(bytes, StandardCharsets.UTF_8);
     try {
       return codec.parse(text, 0).value;
-    } catch (ParseException e) {
+    } catch (DecodingException e) {
       throw new RuntimeException(e);
     }
   }

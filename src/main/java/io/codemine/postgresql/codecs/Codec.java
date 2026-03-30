@@ -121,10 +121,10 @@ public interface Codec<A> {
    *
    * <p>Returns the parsed value together with the offset of the first character that was
    * <em>not</em> consumed, allowing callers to continue parsing subsequent fields without copying
-   * the input. Throws {@link ParseException} if the input cannot be interpreted as a valid literal
-   * of type A.
+   * the input. Throws {@link DecodingException} if the input cannot be interpreted as a valid
+   * literal of type A.
    */
-  ParsingResult<A> parse(CharSequence input, int offset) throws ParseException;
+  ParsingResult<A> parse(CharSequence input, int offset) throws DecodingException;
 
   // -----------------------------------------------------------------------
   // Binary wire format
@@ -172,10 +172,10 @@ public interface Codec<A> {
    * <p>NULL handling ({@code length == -1}) must be performed by the caller before invoking this
    * method.
    *
-   * @throws ParseException if the binary data is malformed
+   * @throws DecodingException if the binary data is malformed
    * @throws UnsupportedOperationException if binary decoding is not implemented for this type
    */
-  A decodeInBinary(ByteBuffer buf, int length) throws ParseException;
+  A decodeInBinary(ByteBuffer buf, int length) throws DecodingException;
 
   /**
    * Generates a random value of type A, for testing purposes. The provided {@link Random} instance
@@ -219,17 +219,17 @@ public interface Codec<A> {
   }
 
   /** Thrown when a text or binary value cannot be parsed into the expected type. */
-  final class ParseException extends Exception {
+  final class DecodingException extends Exception {
 
-    public ParseException(CharSequence input, int offset, String message) {
+    public DecodingException(CharSequence input, int offset, String message) {
       this(input.subSequence(offset, input.length()), message);
     }
 
-    public ParseException(CharSequence input, String message) {
+    public DecodingException(CharSequence input, String message) {
       super(String.format("Parse error: %s (input: \"%s\")", message, input));
     }
 
-    public ParseException(String message) {
+    public DecodingException(String message) {
       super(message);
     }
   }

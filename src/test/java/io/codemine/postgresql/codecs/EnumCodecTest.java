@@ -68,7 +68,7 @@ class EnumCodecTest {
 
   @Test
   void parseThrowsOnUnknownLabel() {
-    assertThrows(Codec.ParseException.class, () -> COLOR_CODEC.parse("yellow", 0));
+    assertThrows(Codec.DecodingException.class, () -> COLOR_CODEC.parse("yellow", 0));
   }
 
   @Test

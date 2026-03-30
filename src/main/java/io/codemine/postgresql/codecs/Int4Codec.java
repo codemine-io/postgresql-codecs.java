@@ -29,12 +29,12 @@ final class Int4Codec implements Codec<Integer> {
 
   @Override
   public Codec.ParsingResult<Integer> parse(CharSequence input, int offset)
-      throws Codec.ParseException {
+      throws Codec.DecodingException {
     try {
       int value = Integer.parseInt(input.subSequence(offset, input.length()).toString().trim());
       return new Codec.ParsingResult<>(value, input.length());
     } catch (NumberFormatException e) {
-      throw new Codec.ParseException(input, offset, "Invalid int4: " + e.getMessage());
+      throw new Codec.DecodingException(input, offset, "Invalid int4: " + e.getMessage());
     }
   }
 

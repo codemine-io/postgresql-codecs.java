@@ -28,12 +28,12 @@ final class MacaddrCodec implements Codec<Macaddr> {
 
   @Override
   public Codec.ParsingResult<Macaddr> parse(CharSequence input, int offset)
-      throws Codec.ParseException {
+      throws Codec.DecodingException {
     // Format: xx:xx:xx:xx:xx:xx
     String s = input.subSequence(offset, input.length()).toString().trim();
     String[] parts = s.split(":");
     if (parts.length != 6) {
-      throw new Codec.ParseException(input, offset, "Invalid macaddr: " + s);
+      throw new Codec.DecodingException(input, offset, "Invalid macaddr: " + s);
     }
     try {
       byte b1 = (byte) Integer.parseInt(parts[0], 16);
@@ -44,7 +44,7 @@ final class MacaddrCodec implements Codec<Macaddr> {
       byte b6 = (byte) Integer.parseInt(parts[5], 16);
       return new Codec.ParsingResult<>(new Macaddr(b1, b2, b3, b4, b5, b6), input.length());
     } catch (NumberFormatException e) {
-      throw new Codec.ParseException(input, offset, "Invalid macaddr hex: " + s);
+      throw new Codec.DecodingException(input, offset, "Invalid macaddr hex: " + s);
     }
   }
 
@@ -59,9 +59,9 @@ final class MacaddrCodec implements Codec<Macaddr> {
   }
 
   @Override
-  public Macaddr decodeInBinary(ByteBuffer buf, int length) throws Codec.ParseException {
+  public Macaddr decodeInBinary(ByteBuffer buf, int length) throws Codec.DecodingException {
     if (length != 6) {
-      throw new Codec.ParseException("Binary macaddr must be 6 bytes, got " + length);
+      throw new Codec.DecodingException("Binary macaddr must be 6 bytes, got " + length);
     }
     return new Macaddr(buf.get(), buf.get(), buf.get(), buf.get(), buf.get(), buf.get());
   }

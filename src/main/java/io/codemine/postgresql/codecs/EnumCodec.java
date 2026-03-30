@@ -53,11 +53,12 @@ public final class EnumCodec<E> implements Codec<E> {
   }
 
   @Override
-  public Codec.ParsingResult<E> parse(CharSequence input, int offset) throws Codec.ParseException {
+  public Codec.ParsingResult<E> parse(CharSequence input, int offset)
+      throws Codec.DecodingException {
     String label = input.subSequence(offset, input.length()).toString();
     E value = byPgLabel.get(label);
     if (value == null) {
-      throw new Codec.ParseException(input, offset, "Unknown " + pgName + " value: " + label);
+      throw new Codec.DecodingException(input, offset, "Unknown " + pgName + " value: " + label);
     }
     return new Codec.ParsingResult<>(value, input.length());
   }
@@ -69,7 +70,7 @@ public final class EnumCodec<E> implements Codec<E> {
   }
 
   @Override
-  public E decodeInBinary(ByteBuffer buf, int length) throws ParseException {
+  public E decodeInBinary(ByteBuffer buf, int length) throws DecodingException {
     // TODO Auto-generated method stub
     throw new UnsupportedOperationException("Unimplemented method 'decodeInBinary'");
   }

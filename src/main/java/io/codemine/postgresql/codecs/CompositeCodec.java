@@ -175,17 +175,18 @@ public final class CompositeCodec<Z> implements Codec<Z> {
 
   @Override
   @SuppressWarnings("unchecked")
-  public Codec.ParsingResult<Z> parse(CharSequence input, int offset) throws Codec.ParseException {
+  public Codec.ParsingResult<Z> parse(CharSequence input, int offset)
+      throws Codec.DecodingException {
     int len = input.length();
     if (offset >= len || input.charAt(offset) != '(') {
-      throw new Codec.ParseException(input, offset, "Expected '(' to open composite " + pgName);
+      throw new Codec.DecodingException(input, offset, "Expected '(' to open composite " + pgName);
     }
     int i = offset + 1; // skip '('
     Object fn = constructor;
     for (int fieldIdx = 0; fieldIdx < fields.length; fieldIdx++) {
       if (fieldIdx > 0) {
         if (i >= len || input.charAt(i) != ',') {
-          throw new Codec.ParseException(
+          throw new Codec.DecodingException(
               input, i, "Expected ',' between fields in composite " + pgName);
         }
         i++; // skip ','
@@ -234,7 +235,7 @@ public final class CompositeCodec<Z> implements Codec<Z> {
       }
     }
     if (i >= len || input.charAt(i) != ')') {
-      throw new Codec.ParseException(input, i, "Expected ')' to close composite " + pgName);
+      throw new Codec.DecodingException(input, i, "Expected ')' to close composite " + pgName);
     }
     return new Codec.ParsingResult<>((Z) fn, i + 1);
   }
@@ -285,13 +286,13 @@ public final class CompositeCodec<Z> implements Codec<Z> {
   /** Decodes a composite value from the PostgreSQL binary composite format. */
   @Override
   @SuppressWarnings("unchecked")
-  public Z decodeInBinary(ByteBuffer buf, int length) throws Codec.ParseException {
+  public Z decodeInBinary(ByteBuffer buf, int length) throws Codec.DecodingException {
     if (length < 4) {
-      throw new Codec.ParseException("Binary composite too short: " + length);
+      throw new Codec.DecodingException("Binary composite too short: " + length);
     }
     int fieldCount = buf.getInt();
     if (fieldCount != fields.length) {
-      throw new Codec.ParseException(
+      throw new Codec.DecodingException(
           "Binary composite field count mismatch: expected "
               + fields.length
               + ", got "

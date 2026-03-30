@@ -100,9 +100,9 @@ final class ArrayCodec<A> implements Codec<List<A>> {
    * at {@code offset}. Handles double-quoted elements (with backslash escaping) and bare elements.
    */
   @Override
-  public ParsingResult<List<A>> parse(CharSequence input, int offset) throws ParseException {
+  public ParsingResult<List<A>> parse(CharSequence input, int offset) throws DecodingException {
     if (offset >= input.length() || input.charAt(offset) != '{') {
-      throw new ParseException(input, offset, "Expected '{' to open array literal");
+      throw new DecodingException(input, offset, "Expected '{' to open array literal");
     }
     int pos = offset + 1;
     List<A> list = new ArrayList<>();
@@ -132,7 +132,7 @@ final class ArrayCodec<A> implements Codec<List<A>> {
           }
         }
         if (pos >= input.length() || input.charAt(pos) != '"') {
-          throw new ParseException(input, offset, "Unterminated quoted array element");
+          throw new DecodingException(input, offset, "Unterminated quoted array element");
         }
         pos++; // skip closing '"'
         list.add(elementCodec.parse(elem.toString(), 0).value);
@@ -147,7 +147,7 @@ final class ArrayCodec<A> implements Codec<List<A>> {
       }
 
       if (pos >= input.length()) {
-        throw new ParseException(input, offset, "Unexpected end of input parsing array");
+        throw new DecodingException(input, offset, "Unexpected end of input parsing array");
       }
       char sep = input.charAt(pos);
       if (sep == '}') {
@@ -155,11 +155,11 @@ final class ArrayCodec<A> implements Codec<List<A>> {
       } else if (sep == ',') {
         pos++;
       } else {
-        throw new ParseException(
+        throw new DecodingException(
             input, offset, "Expected ',' or '}' in array literal, got '" + sep + "'");
       }
     }
-    throw new ParseException(input, offset, "Unexpected end of input parsing array");
+    throw new DecodingException(input, offset, "Unexpected end of input parsing array");
   }
 
   // -----------------------------------------------------------------------
@@ -201,7 +201,7 @@ final class ArrayCodec<A> implements Codec<List<A>> {
 
   /** Decodes a PostgreSQL binary array. */
   @Override
-  public List<A> decodeInBinary(ByteBuffer buf, int length) throws ParseException {
+  public List<A> decodeInBinary(ByteBuffer buf, int length) throws DecodingException {
     int ndim = buf.getInt();
     buf.getInt(); // flags (ignored)
     int elementOid = buf.getInt();
@@ -209,7 +209,7 @@ final class ArrayCodec<A> implements Codec<List<A>> {
     int expectedElementOid = elementCodec.scalarOid();
 
     if (expectedElementOid != 0 && elementOid != expectedElementOid) {
-      throw new ParseException(
+      throw new DecodingException(
           "Unexpected element OID in array binary decode: expected "
               + expectedElementOid
               + ", got "
@@ -221,7 +221,7 @@ final class ArrayCodec<A> implements Codec<List<A>> {
     }
 
     if (ndim != dimensions()) {
-      throw new ParseException(
+      throw new DecodingException(
           "Expected " + dimensions() + "-dimensional array in binary decode, got " + ndim);
     }
 

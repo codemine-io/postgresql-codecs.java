@@ -28,12 +28,12 @@ final class InetCodec implements Codec<Inet> {
 
   @Override
   public Codec.ParsingResult<Inet> parse(CharSequence input, int offset)
-      throws Codec.ParseException {
+      throws Codec.DecodingException {
     String s = input.subSequence(offset, input.length()).toString().trim();
     try {
       return new Codec.ParsingResult<>(parseInet(s), input.length());
     } catch (Exception e) {
-      throw new Codec.ParseException(input, offset, "Invalid inet: " + s);
+      throw new Codec.DecodingException(input, offset, "Invalid inet: " + s);
     }
   }
 
@@ -43,9 +43,9 @@ final class InetCodec implements Codec<Inet> {
   }
 
   @Override
-  public Inet decodeInBinary(ByteBuffer buf, int length) throws Codec.ParseException {
+  public Inet decodeInBinary(ByteBuffer buf, int length) throws Codec.DecodingException {
     if (length < 4) {
-      throw new Codec.ParseException("Binary inet too short: " + length);
+      throw new Codec.DecodingException("Binary inet too short: " + length);
     }
     byte af = buf.get();
     byte netmask = buf.get();
@@ -54,17 +54,17 @@ final class InetCodec implements Codec<Inet> {
     return switch (af) {
       case 2 -> {
         if (addrLen != 4 || length != 8) {
-          throw new Codec.ParseException("Binary IPv4 inet length mismatch");
+          throw new Codec.DecodingException("Binary IPv4 inet length mismatch");
         }
         yield new Inet.V4(buf.getInt(), netmask);
       }
       case 3 -> {
         if (addrLen != 16 || length != 20) {
-          throw new Codec.ParseException("Binary IPv6 inet length mismatch");
+          throw new Codec.DecodingException("Binary IPv6 inet length mismatch");
         }
         yield new Inet.V6(buf.getInt(), buf.getInt(), buf.getInt(), buf.getInt(), netmask);
       }
-      default -> throw new Codec.ParseException("Unknown inet address family: " + af);
+      default -> throw new Codec.DecodingException("Unknown inet address family: " + af);
     };
   }
 

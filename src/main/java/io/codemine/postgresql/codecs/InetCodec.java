@@ -22,12 +22,12 @@ final class InetCodec implements Codec<Inet> {
   }
 
   @Override
-  public void render(StringBuilder sb, Inet value) {
+  public void encodeInText(StringBuilder sb, Inet value) {
     value.write(sb);
   }
 
   @Override
-  public Codec.ParsingResult<Inet> parse(CharSequence input, int offset)
+  public Codec.ParsingResult<Inet> decodeInText(CharSequence input, int offset)
       throws Codec.DecodingException {
     String s = input.subSequence(offset, input.length()).toString().trim();
     try {

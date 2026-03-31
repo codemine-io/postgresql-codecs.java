@@ -51,14 +51,14 @@ final class DomainCodec<A> implements Codec<A> {
   }
 
   @Override
-  public void render(StringBuilder sb, A value) {
-    base.render(sb, value);
+  public void encodeInText(StringBuilder sb, A value) {
+    base.encodeInText(sb, value);
   }
 
   @Override
-  public Codec.ParsingResult<A> parse(CharSequence input, int offset)
+  public Codec.ParsingResult<A> decodeInText(CharSequence input, int offset)
       throws Codec.DecodingException {
-    return base.parse(input, offset);
+    return base.decodeInText(input, offset);
   }
 
   @Override

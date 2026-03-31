@@ -27,12 +27,12 @@ final class DateCodec implements Codec<LocalDate> {
   }
 
   @Override
-  public void render(StringBuilder sb, LocalDate value) {
+  public void encodeInText(StringBuilder sb, LocalDate value) {
     sb.append(value);
   }
 
   @Override
-  public Codec.ParsingResult<LocalDate> parse(CharSequence input, int offset)
+  public Codec.ParsingResult<LocalDate> decodeInText(CharSequence input, int offset)
       throws Codec.DecodingException {
     String s = input.subSequence(offset, input.length()).toString().trim();
     try {

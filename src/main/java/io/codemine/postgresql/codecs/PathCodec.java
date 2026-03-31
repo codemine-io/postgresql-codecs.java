@@ -25,7 +25,7 @@ final class PathCodec implements Codec<Path> {
   }
 
   @Override
-  public void render(StringBuilder sb, Path value) {
+  public void encodeInText(StringBuilder sb, Path value) {
     sb.append(value.closed() ? '(' : '[');
     for (int i = 0; i < value.points().size(); i++) {
       if (i > 0) {
@@ -42,7 +42,7 @@ final class PathCodec implements Codec<Path> {
   }
 
   @Override
-  public Codec.ParsingResult<Path> parse(CharSequence input, int offset)
+  public Codec.ParsingResult<Path> decodeInText(CharSequence input, int offset)
       throws Codec.DecodingException {
     String s = input.subSequence(offset, input.length()).toString().trim();
     try {

@@ -25,7 +25,7 @@ final class PolygonCodec implements Codec<Polygon> {
   }
 
   @Override
-  public void render(StringBuilder sb, Polygon value) {
+  public void encodeInText(StringBuilder sb, Polygon value) {
     sb.append('(');
     for (int i = 0; i < value.points().size(); i++) {
       if (i > 0) {
@@ -42,7 +42,7 @@ final class PolygonCodec implements Codec<Polygon> {
   }
 
   @Override
-  public Codec.ParsingResult<Polygon> parse(CharSequence input, int offset)
+  public Codec.ParsingResult<Polygon> decodeInText(CharSequence input, int offset)
       throws Codec.DecodingException {
     String s = input.subSequence(offset, input.length()).toString().trim();
     try {

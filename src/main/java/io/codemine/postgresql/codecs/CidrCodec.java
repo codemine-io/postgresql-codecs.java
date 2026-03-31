@@ -23,12 +23,12 @@ final class CidrCodec implements Codec<Cidr> {
   }
 
   @Override
-  public void render(StringBuilder sb, Cidr value) {
+  public void encodeInText(StringBuilder sb, Cidr value) {
     value.write(sb);
   }
 
   @Override
-  public Codec.ParsingResult<Cidr> parse(CharSequence input, int offset)
+  public Codec.ParsingResult<Cidr> decodeInText(CharSequence input, int offset)
       throws Codec.DecodingException {
     String s = input.subSequence(offset, input.length()).toString().trim();
     try {

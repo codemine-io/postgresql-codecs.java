@@ -23,12 +23,12 @@ final class Int4Codec implements Codec<Integer> {
   }
 
   @Override
-  public void render(StringBuilder sb, Integer value) {
+  public void encodeInText(StringBuilder sb, Integer value) {
     sb.append(value);
   }
 
   @Override
-  public Codec.ParsingResult<Integer> parse(CharSequence input, int offset)
+  public Codec.ParsingResult<Integer> decodeInText(CharSequence input, int offset)
       throws Codec.DecodingException {
     try {
       int value = Integer.parseInt(input.subSequence(offset, input.length()).toString().trim());

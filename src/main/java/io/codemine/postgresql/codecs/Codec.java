@@ -13,10 +13,10 @@ import java.util.function.Function;
  * <p>Each codec supports two wire formats:
  *
  * <ul>
- *   <li><b>Textual</b> — the PostgreSQL text representation. Low-level: {@link #render} and {@link
- *       #parse}. Convenience: {@link #renderAsString} and {@link #parseString}. The low-level
- *       methods are also used when encoding composite and array fields inside a composite/array
- *       literal.
+ *   <li><b>Textual</b> — the PostgreSQL text representation. Low-level: {@link #encodeInText} and
+ *       {@link #decodeInText}. Convenience: {@link #encodeInTextToString} and {@link
+ *       #decodeInTextFromString}. The low-level methods are also used when encoding composite and
+ *       array fields inside a composite/array literal.
  *   <li><b>Binary</b> — the PostgreSQL binary wire format. Low-level: {@link #encodeInBinary} and
  *       {@link #decodeInBinary}. Convenience: {@link #encodeInBinaryToBytes}, {@link
  *       #encodeInBinaryToByteBuffer}, and {@link #decodeInBinaryFromBytes}. Binary encoding is
@@ -148,15 +148,15 @@ public interface Codec<A> {
    * <p>This is primarily used for encoding fields inside composite and array literals. The written
    * form must be the canonical text representation accepted by PostgreSQL for the type.
    */
-  void render(StringBuilder sb, A value);
+  void encodeInText(StringBuilder sb, A value);
 
   /**
    * Encodes the given non-null value as a PostgreSQL text literal and returns it as a {@link
-   * String}. Convenience wrapper around {@link #render(StringBuilder, Object)}.
+   * String}. Convenience wrapper around {@link #encodeInText(StringBuilder, Object)}.
    */
-  default String renderAsString(A value) {
+  default String encodeInTextToString(A value) {
     var sb = new StringBuilder();
-    render(sb, value);
+    encodeInText(sb, value);
     return sb.toString();
   }
 
@@ -175,16 +175,17 @@ public interface Codec<A> {
    * the input. Throws {@link DecodingException} if the input cannot be interpreted as a valid
    * literal of type A.
    */
-  ParsingResult<A> parse(CharSequence input, int offset) throws DecodingException;
+  ParsingResult<A> decodeInText(CharSequence input, int offset) throws DecodingException;
 
   /**
    * Decodes a PostgreSQL text-format literal of type A from the given string. Convenience wrapper
-   * around {@link #parse(CharSequence, int)} that passes the full string starting at offset 0.
+   * around {@link #decodeInText(CharSequence, int)} that passes the full string starting at offset
+   * 0.
    *
    * @throws DecodingException if the input cannot be interpreted as a valid literal of type A
    */
-  default A parseString(String input) throws DecodingException {
-    return parse(input, 0).value;
+  default A decodeInTextFromString(String input) throws DecodingException {
+    return decodeInText(input, 0).value;
   }
 
   // -----------------------------------------------------------------------

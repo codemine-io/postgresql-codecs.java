@@ -23,7 +23,7 @@ final class PointCodec implements Codec<Point> {
   }
 
   @Override
-  public void render(StringBuilder sb, Point value) {
+  public void encodeInText(StringBuilder sb, Point value) {
     sb.append('(');
     sb.append(Double.toString(value.x()));
     sb.append(',');
@@ -32,7 +32,7 @@ final class PointCodec implements Codec<Point> {
   }
 
   @Override
-  public Codec.ParsingResult<Point> parse(CharSequence input, int offset)
+  public Codec.ParsingResult<Point> decodeInText(CharSequence input, int offset)
       throws Codec.DecodingException {
     String s = input.subSequence(offset, input.length()).toString().trim();
     try {

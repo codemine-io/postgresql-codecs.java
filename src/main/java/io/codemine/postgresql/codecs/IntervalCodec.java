@@ -23,7 +23,7 @@ final class IntervalCodec implements Codec<Interval> {
   }
 
   @Override
-  public void render(StringBuilder sb, Interval value) {
+  public void encodeInText(StringBuilder sb, Interval value) {
     int months = value.month();
     int years = months / 12;
     int mons = months % 12;
@@ -59,7 +59,7 @@ final class IntervalCodec implements Codec<Interval> {
   }
 
   @Override
-  public Codec.ParsingResult<Interval> parse(CharSequence input, int offset)
+  public Codec.ParsingResult<Interval> decodeInText(CharSequence input, int offset)
       throws Codec.DecodingException {
     String s = input.subSequence(offset, input.length()).toString().trim();
     try {

@@ -156,7 +156,7 @@ public final class CompositeCodec<Z> implements Codec<Z> {
 
   @Override
   @SuppressWarnings("unchecked")
-  public void render(StringBuilder sb, Z value) {
+  public void encodeInText(StringBuilder sb, Z value) {
     sb.append('(');
     for (int i = 0; i < fields.length; i++) {
       if (i > 0) {
@@ -166,7 +166,7 @@ public final class CompositeCodec<Z> implements Codec<Z> {
       Object fieldValue = field.accessor.apply(value);
       if (fieldValue != null) {
         var fieldSb = new StringBuilder();
-        field.codec.render(fieldSb, fieldValue);
+        field.codec.encodeInText(fieldSb, fieldValue);
         int len = fieldSb.length();
         if (len == 0) {
           sb.append("\"\"");
@@ -202,7 +202,7 @@ public final class CompositeCodec<Z> implements Codec<Z> {
 
   @Override
   @SuppressWarnings("unchecked")
-  public Codec.ParsingResult<Z> parse(CharSequence input, int offset)
+  public Codec.ParsingResult<Z> decodeInText(CharSequence input, int offset)
       throws Codec.DecodingException {
     int len = input.length();
     if (offset >= len || input.charAt(offset) != '(') {
@@ -253,7 +253,7 @@ public final class CompositeCodec<Z> implements Codec<Z> {
             }
           }
         }
-        var result = ((Codec<Object>) fields[fieldIdx].codec).parse(sb, 0);
+        var result = ((Codec<Object>) fields[fieldIdx].codec).decodeInText(sb, 0);
         fn = ((Function<Object, Object>) fn).apply(result.value);
       } else {
         // Unquoted field — pass a subSequence bounded to this field
@@ -262,7 +262,8 @@ public final class CompositeCodec<Z> implements Codec<Z> {
           i++;
         }
         var result =
-            ((Codec<Object>) fields[fieldIdx].codec).parse(input.subSequence(fieldStart, i), 0);
+            ((Codec<Object>) fields[fieldIdx].codec)
+                .decodeInText(input.subSequence(fieldStart, i), 0);
         fn = ((Function<Object, Object>) fn).apply(result.value);
       }
     }

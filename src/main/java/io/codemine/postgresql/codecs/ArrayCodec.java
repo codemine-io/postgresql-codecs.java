@@ -55,14 +55,14 @@ final class ArrayCodec<A> implements Codec<List<A>> {
   // Textual wire format
   // -----------------------------------------------------------------------
   @Override
-  public void render(StringBuilder sb, List<A> value) {
+  public void encodeInText(StringBuilder sb, List<A> value) {
     sb.append("{");
     for (int i = 0; i < value.size(); i++) {
       if (i > 0) {
         sb.append(delimiter);
       }
       StringBuilder elem = new StringBuilder();
-      elementCodec.render(elem, value.get(i));
+      elementCodec.encodeInText(elem, value.get(i));
       int len = elem.length();
       if (len == 0) {
         sb.append("\"\"");
@@ -103,7 +103,8 @@ final class ArrayCodec<A> implements Codec<List<A>> {
    * at {@code offset}. Handles double-quoted elements (with backslash escaping) and bare elements.
    */
   @Override
-  public ParsingResult<List<A>> parse(CharSequence input, int offset) throws DecodingException {
+  public ParsingResult<List<A>> decodeInText(CharSequence input, int offset)
+      throws DecodingException {
     if (offset >= input.length() || input.charAt(offset) != '{') {
       throw new DecodingException(input, offset, "Expected '{' to open array literal");
     }
@@ -138,7 +139,7 @@ final class ArrayCodec<A> implements Codec<List<A>> {
           throw new DecodingException(input, offset, "Unterminated quoted array element");
         }
         pos++; // skip closing '"'
-        list.add(elementCodec.parse(elem.toString(), 0).value);
+        list.add(elementCodec.decodeInText(elem.toString(), 0).value);
       } else {
         // Bare element: read until delimiter or '}'.
         int start = pos;
@@ -146,7 +147,7 @@ final class ArrayCodec<A> implements Codec<List<A>> {
           pos++;
         }
         String elemStr = input.subSequence(start, pos).toString();
-        list.add(elementCodec.parse(elemStr, 0).value);
+        list.add(elementCodec.decodeInText(elemStr, 0).value);
       }
 
       if (pos >= input.length()) {

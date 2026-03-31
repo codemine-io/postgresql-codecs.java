@@ -31,14 +31,14 @@ final class MappedCodec<A, B> implements Codec<B> {
     return codec.arrayOid();
   }
 
-  public void render(StringBuilder sb, B value) {
-    codec.render(sb, fromMapped.apply(value));
+  public void encodeInText(StringBuilder sb, B value) {
+    codec.encodeInText(sb, fromMapped.apply(value));
   }
 
   @Override
-  public Codec.ParsingResult<B> parse(CharSequence input, int offset)
+  public Codec.ParsingResult<B> decodeInText(CharSequence input, int offset)
       throws Codec.DecodingException {
-    var result = codec.parse(input, offset);
+    var result = codec.decodeInText(input, offset);
     return new Codec.ParsingResult<>(toMapped.apply(result.value), result.nextOffset);
   }
 

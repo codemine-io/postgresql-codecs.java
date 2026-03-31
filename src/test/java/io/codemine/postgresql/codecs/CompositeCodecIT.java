@@ -172,12 +172,12 @@ class CompositeCodecIT {
       PGobject obj = new PGobject();
       obj.setType(codec.typeSig());
       StringBuilder sb = new StringBuilder();
-      codec.render(sb, value);
+      codec.encodeInText(sb, value);
       obj.setValue(sb.toString());
       ps.setObject(1, obj);
       try (ResultSet rs = ps.executeQuery()) {
         assertTrue(rs.next(), "Expected a result row");
-        return codec.parse(rs.getString(1), 0).value;
+        return codec.decodeInText(rs.getString(1), 0).value;
       }
     }
   }

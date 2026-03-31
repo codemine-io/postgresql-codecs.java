@@ -23,7 +23,7 @@ final class LineCodec implements Codec<Line> {
   }
 
   @Override
-  public void render(StringBuilder sb, Line value) {
+  public void encodeInText(StringBuilder sb, Line value) {
     sb.append('{');
     sb.append(Double.toString(value.a()));
     sb.append(',');
@@ -34,7 +34,7 @@ final class LineCodec implements Codec<Line> {
   }
 
   @Override
-  public Codec.ParsingResult<Line> parse(CharSequence input, int offset)
+  public Codec.ParsingResult<Line> decodeInText(CharSequence input, int offset)
       throws Codec.DecodingException {
     String s = input.subSequence(offset, input.length()).toString().trim();
     try {

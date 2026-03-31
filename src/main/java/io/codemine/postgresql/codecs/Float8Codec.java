@@ -23,7 +23,7 @@ final class Float8Codec implements Codec<Double> {
   }
 
   @Override
-  public void render(StringBuilder sb, Double value) {
+  public void encodeInText(StringBuilder sb, Double value) {
     if (Double.isNaN(value)) {
       sb.append("NaN");
     } else if (value == Double.POSITIVE_INFINITY) {
@@ -36,7 +36,7 @@ final class Float8Codec implements Codec<Double> {
   }
 
   @Override
-  public Codec.ParsingResult<Double> parse(CharSequence input, int offset)
+  public Codec.ParsingResult<Double> decodeInText(CharSequence input, int offset)
       throws Codec.DecodingException {
     String s = input.subSequence(offset, input.length()).toString().trim();
     try {

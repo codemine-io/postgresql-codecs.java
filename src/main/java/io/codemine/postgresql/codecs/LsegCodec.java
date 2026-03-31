@@ -23,7 +23,7 @@ final class LsegCodec implements Codec<Lseg> {
   }
 
   @Override
-  public void render(StringBuilder sb, Lseg value) {
+  public void encodeInText(StringBuilder sb, Lseg value) {
     sb.append("[(");
     sb.append(Double.toString(value.x1()));
     sb.append(',');
@@ -36,7 +36,7 @@ final class LsegCodec implements Codec<Lseg> {
   }
 
   @Override
-  public Codec.ParsingResult<Lseg> parse(CharSequence input, int offset)
+  public Codec.ParsingResult<Lseg> decodeInText(CharSequence input, int offset)
       throws Codec.DecodingException {
     String s = input.subSequence(offset, input.length()).toString().trim();
     try {

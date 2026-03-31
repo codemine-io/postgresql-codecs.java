@@ -23,14 +23,14 @@ final class VarbitCodec implements Codec<Bit> {
   }
 
   @Override
-  public void render(StringBuilder sb, Bit value) {
-    Codec.BIT.render(sb, value);
+  public void encodeInText(StringBuilder sb, Bit value) {
+    Codec.BIT.encodeInText(sb, value);
   }
 
   @Override
-  public Codec.ParsingResult<Bit> parse(CharSequence input, int offset)
+  public Codec.ParsingResult<Bit> decodeInText(CharSequence input, int offset)
       throws Codec.DecodingException {
-    return Codec.BIT.parse(input, offset);
+    return Codec.BIT.decodeInText(input, offset);
   }
 
   @Override

@@ -23,12 +23,12 @@ final class BitCodec implements Codec<Bit> {
   }
 
   @Override
-  public void render(StringBuilder sb, Bit value) {
+  public void encodeInText(StringBuilder sb, Bit value) {
     value.write(sb);
   }
 
   @Override
-  public Codec.ParsingResult<Bit> parse(CharSequence input, int offset)
+  public Codec.ParsingResult<Bit> decodeInText(CharSequence input, int offset)
       throws Codec.DecodingException {
     String s = input.subSequence(offset, input.length()).toString().trim();
     int length = s.length();

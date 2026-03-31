@@ -49,12 +49,12 @@ public final class EnumCodec<E> implements Codec<E> {
   }
 
   @Override
-  public void render(StringBuilder sb, E value) {
+  public void encodeInText(StringBuilder sb, E value) {
     sb.append(pgLabels.get(value));
   }
 
   @Override
-  public Codec.ParsingResult<E> parse(CharSequence input, int offset)
+  public Codec.ParsingResult<E> decodeInText(CharSequence input, int offset)
       throws Codec.DecodingException {
     String label = input.subSequence(offset, input.length()).toString();
     E value = byPgLabel.get(label);

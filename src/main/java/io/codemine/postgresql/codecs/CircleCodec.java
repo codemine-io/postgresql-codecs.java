@@ -23,7 +23,7 @@ final class CircleCodec implements Codec<Circle> {
   }
 
   @Override
-  public void render(StringBuilder sb, Circle value) {
+  public void encodeInText(StringBuilder sb, Circle value) {
     sb.append("<(");
     sb.append(Double.toString(value.x()));
     sb.append(',');
@@ -34,7 +34,7 @@ final class CircleCodec implements Codec<Circle> {
   }
 
   @Override
-  public Codec.ParsingResult<Circle> parse(CharSequence input, int offset)
+  public Codec.ParsingResult<Circle> decodeInText(CharSequence input, int offset)
       throws Codec.DecodingException {
     String s = input.subSequence(offset, input.length()).toString().trim();
     try {

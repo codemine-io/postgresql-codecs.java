@@ -22,12 +22,12 @@ final class MacaddrCodec implements Codec<Macaddr> {
   }
 
   @Override
-  public void render(StringBuilder sb, Macaddr value) {
+  public void encodeInText(StringBuilder sb, Macaddr value) {
     sb.append(value);
   }
 
   @Override
-  public Codec.ParsingResult<Macaddr> parse(CharSequence input, int offset)
+  public Codec.ParsingResult<Macaddr> decodeInText(CharSequence input, int offset)
       throws Codec.DecodingException {
     // Format: xx:xx:xx:xx:xx:xx
     String s = input.subSequence(offset, input.length()).toString().trim();

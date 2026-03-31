@@ -25,7 +25,7 @@ final class TimetzCodec implements Codec<Timetz> {
   }
 
   @Override
-  public void render(StringBuilder sb, Timetz value) {
+  public void encodeInText(StringBuilder sb, Timetz value) {
     // Write hh:mm:ss[.ffffff]
     long total = value.time();
     long hours = total / 3_600_000_000L;
@@ -63,7 +63,7 @@ final class TimetzCodec implements Codec<Timetz> {
   }
 
   @Override
-  public Codec.ParsingResult<Timetz> parse(CharSequence input, int offset)
+  public Codec.ParsingResult<Timetz> decodeInText(CharSequence input, int offset)
       throws Codec.DecodingException {
     String s = input.subSequence(offset, input.length()).toString().trim();
     try {

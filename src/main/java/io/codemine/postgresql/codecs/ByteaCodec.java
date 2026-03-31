@@ -26,13 +26,13 @@ final class ByteaCodec implements Codec<Bytea> {
   }
 
   @Override
-  public void render(StringBuilder sb, Bytea value) {
+  public void encodeInText(StringBuilder sb, Bytea value) {
     sb.append("\\x");
     sb.append(HEX.formatHex(value.bytes()));
   }
 
   @Override
-  public Codec.ParsingResult<Bytea> parse(CharSequence input, int offset)
+  public Codec.ParsingResult<Bytea> decodeInText(CharSequence input, int offset)
       throws Codec.DecodingException {
     String s = input.subSequence(offset, input.length()).toString().trim();
     if (!s.startsWith("\\x")) {

@@ -171,12 +171,12 @@ class EnumCodecIT {
       PGobject obj = new PGobject();
       obj.setType("test_mood");
       StringBuilder sb = new StringBuilder();
-      MOOD_CODEC.render(sb, value);
+      MOOD_CODEC.encodeInText(sb, value);
       obj.setValue(sb.toString());
       ps.setObject(1, obj);
       try (ResultSet rs = ps.executeQuery()) {
         assertTrue(rs.next());
-        Mood decoded = MOOD_CODEC.parse(rs.getString(1), 0).value;
+        Mood decoded = MOOD_CODEC.decodeInText(rs.getString(1), 0).value;
         assertEquals(value, decoded);
       }
     }

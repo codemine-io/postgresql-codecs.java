@@ -308,7 +308,7 @@ abstract class CodecITBase<A> {
         obj.setType(codec.typeSig());
         {
           StringBuilder sb = new StringBuilder();
-          codec.render(sb, value);
+          codec.encodeInText(sb, value);
           obj.setValue(sb.toString());
         }
         ps.setObject(1, obj);
@@ -323,7 +323,7 @@ abstract class CodecITBase<A> {
         if (text == null) {
           decoded = null;
         } else {
-          var result = codec.parse(text, 0);
+          var result = codec.decodeInText(text, 0);
           decoded = result.value;
         }
       }
@@ -371,7 +371,7 @@ abstract class CodecITBase<A> {
         obj.setType(arrayCodec.typeSig());
         {
           StringBuilder sb = new StringBuilder();
-          arrayCodec.render(sb, value);
+          arrayCodec.encodeInText(sb, value);
           obj.setValue(sb.toString());
         }
         ps.setObject(1, obj);
@@ -386,7 +386,7 @@ abstract class CodecITBase<A> {
         if (text == null) {
           decoded = null;
         } else {
-          decoded = arrayCodec.parse(text, 0).value;
+          decoded = arrayCodec.decodeInText(text, 0).value;
         }
       }
 

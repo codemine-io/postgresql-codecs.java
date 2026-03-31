@@ -23,12 +23,12 @@ final class UuidCodec implements Codec<java.util.UUID> {
   }
 
   @Override
-  public void render(StringBuilder sb, java.util.UUID value) {
+  public void encodeInText(StringBuilder sb, java.util.UUID value) {
     sb.append(value.toString());
   }
 
   @Override
-  public Codec.ParsingResult<java.util.UUID> parse(CharSequence input, int offset)
+  public Codec.ParsingResult<java.util.UUID> decodeInText(CharSequence input, int offset)
       throws Codec.DecodingException {
     String s = input.subSequence(offset, input.length()).toString().trim();
     try {

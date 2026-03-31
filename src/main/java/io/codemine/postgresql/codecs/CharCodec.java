@@ -33,12 +33,12 @@ final class CharCodec implements Codec<Byte> {
   }
 
   @Override
-  public void render(StringBuilder sb, Byte value) {
+  public void encodeInText(StringBuilder sb, Byte value) {
     sb.append((char) (value & 0xFF));
   }
 
   @Override
-  public Codec.ParsingResult<Byte> parse(CharSequence input, int offset)
+  public Codec.ParsingResult<Byte> decodeInText(CharSequence input, int offset)
       throws Codec.DecodingException {
     if (offset >= input.length()) {
       throw new Codec.DecodingException(input, offset, "Empty input for char");

@@ -28,7 +28,7 @@ final class TimestampCodec implements Codec<LocalDateTime> {
   }
 
   @Override
-  public void render(StringBuilder sb, LocalDateTime value) {
+  public void encodeInText(StringBuilder sb, LocalDateTime value) {
     pad4(sb, value.getYear());
     sb.append('-');
     pad2(sb, value.getMonthValue());
@@ -44,7 +44,7 @@ final class TimestampCodec implements Codec<LocalDateTime> {
   }
 
   @Override
-  public Codec.ParsingResult<LocalDateTime> parse(CharSequence input, int offset)
+  public Codec.ParsingResult<LocalDateTime> decodeInText(CharSequence input, int offset)
       throws Codec.DecodingException {
     String s = input.subSequence(offset, input.length()).toString().trim();
     try {

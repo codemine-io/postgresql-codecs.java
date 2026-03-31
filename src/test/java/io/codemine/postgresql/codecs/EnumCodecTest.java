@@ -38,14 +38,14 @@ public class EnumCodecTest extends CodecTestBase<EnumCodecTest.Color> {
 
   @Test
   void parsesCorrectLabels() throws Exception {
-    assertEquals(Color.RED, COLOR_CODEC.parse("red", 0).value);
-    assertEquals(Color.GREEN, COLOR_CODEC.parse("green", 0).value);
-    assertEquals(Color.BLUE, COLOR_CODEC.parse("blue", 0).value);
+    assertEquals(Color.RED, COLOR_CODEC.decodeInText("red", 0).value);
+    assertEquals(Color.GREEN, COLOR_CODEC.decodeInText("green", 0).value);
+    assertEquals(Color.BLUE, COLOR_CODEC.decodeInText("blue", 0).value);
   }
 
   @Test
   void parseThrowsOnUnknownLabel() {
-    assertThrows(Codec.DecodingException.class, () -> COLOR_CODEC.parse("yellow", 0));
+    assertThrows(Codec.DecodingException.class, () -> COLOR_CODEC.decodeInText("yellow", 0));
   }
 
   @Test
@@ -58,7 +58,7 @@ public class EnumCodecTest extends CodecTestBase<EnumCodecTest.Color> {
   // -----------------------------------------------------------------------
   private String writeToString(Color value) {
     StringBuilder sb = new StringBuilder();
-    COLOR_CODEC.render(sb, value);
+    COLOR_CODEC.encodeInText(sb, value);
     return sb.toString();
   }
 }

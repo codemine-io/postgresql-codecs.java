@@ -23,7 +23,7 @@ final class Float4Codec implements Codec<Float> {
   }
 
   @Override
-  public void render(StringBuilder sb, Float value) {
+  public void encodeInText(StringBuilder sb, Float value) {
     if (Float.isNaN(value)) {
       sb.append("NaN");
     } else if (value == Float.POSITIVE_INFINITY) {
@@ -36,7 +36,7 @@ final class Float4Codec implements Codec<Float> {
   }
 
   @Override
-  public Codec.ParsingResult<Float> parse(CharSequence input, int offset)
+  public Codec.ParsingResult<Float> decodeInText(CharSequence input, int offset)
       throws Codec.DecodingException {
     String s = input.subSequence(offset, input.length()).toString().trim();
     try {

@@ -10,9 +10,15 @@ import java.util.Random;
 final class ArrayCodec<A> implements Codec<List<A>> {
 
   private final Codec<A> elementCodec;
+  private final char delimiter;
 
   public ArrayCodec(Codec<A> elementCodec) {
+    this(elementCodec, ',');
+  }
+
+  public ArrayCodec(Codec<A> elementCodec, char delimiter) {
     this.elementCodec = elementCodec;
+    this.delimiter = delimiter;
   }
 
   @Override
@@ -50,15 +56,14 @@ final class ArrayCodec<A> implements Codec<List<A>> {
   // -----------------------------------------------------------------------
   @Override
   public void write(StringBuilder sb, List<A> value) {
-    char delim = elementCodec.arrayElementDelimiter();
     sb.append("{");
     for (int i = 0; i < value.size(); i++) {
       if (i > 0) {
-        sb.append(delim);
+        sb.append(delimiter);
       }
       StringBuilder elemSb = new StringBuilder();
       elementCodec.write(elemSb, value.get(i));
-      writeArrayElement(sb, elemSb, delim);
+      writeArrayElement(sb, elemSb, delimiter);
     }
     sb.append("}");
   }
@@ -149,9 +154,8 @@ final class ArrayCodec<A> implements Codec<List<A>> {
         list.add(elementCodec.parse(elem.toString(), 0).value);
       } else {
         // Bare element: read until delimiter or '}'.
-        char delim = elementCodec.arrayElementDelimiter();
         int start = pos;
-        while (pos < input.length() && input.charAt(pos) != delim && input.charAt(pos) != '}') {
+        while (pos < input.length() && input.charAt(pos) != delimiter && input.charAt(pos) != '}') {
           pos++;
         }
         String elemStr = input.subSequence(start, pos).toString();
@@ -164,12 +168,13 @@ final class ArrayCodec<A> implements Codec<List<A>> {
       char sep = input.charAt(pos);
       if (sep == '}') {
         return new ParsingResult<>(list, pos + 1);
-      } else if (sep == elementCodec.arrayElementDelimiter()) {
+      } else if (sep == delimiter) {
         pos++;
       } else {
-        char delim = elementCodec.arrayElementDelimiter();
         throw new DecodingException(
-            input, offset, "Expected '" + delim + "' or '}' in array literal, got '" + sep + "'");
+            input,
+            offset,
+            "Expected '" + delimiter + "' or '}' in array literal, got '" + sep + "'");
       }
     }
     throw new DecodingException(input, offset, "Unexpected end of input parsing array");

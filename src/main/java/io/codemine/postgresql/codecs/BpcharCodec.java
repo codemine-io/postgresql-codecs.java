@@ -8,9 +8,27 @@ import java.util.Random;
 /** Codec for PostgreSQL {@code bpchar} (blank-padded character) values. */
 final class BpcharCodec implements Codec<String> {
 
+  private final int size;
+
+  BpcharCodec() {
+    this(0);
+  }
+
+  BpcharCodec(int size) {
+    if (size < 0) {
+      throw new IllegalArgumentException("size must be >= 0, got: " + size);
+    }
+    this.size = size;
+  }
+
   @Override
   public String name() {
     return "bpchar";
+  }
+
+  @Override
+  public String typeSig() {
+    return size > 0 ? "bpchar(" + size + ")" : "bpchar";
   }
 
   @Override
@@ -48,11 +66,12 @@ final class BpcharCodec implements Codec<String> {
   }
 
   @Override
-  public String random(Random r, int size) {
+  public String random(Random r, int randomSize) {
+    int len = size > 0 ? size : randomSize;
     final int range1Size = 0xD7FF;
     final int totalValid = range1Size + (0x10FFFF - 0xE000 + 1);
-    StringBuilder sb = new StringBuilder(size);
-    for (int i = 0; i < size; i++) {
+    StringBuilder sb = new StringBuilder(len);
+    for (int i = 0; i < len; i++) {
       int n = r.nextInt(totalValid);
       int codePoint = (n < range1Size) ? n + 1 : n + (0xE000 - range1Size);
       sb.appendCodePoint(codePoint);

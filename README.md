@@ -1,7 +1,8 @@
 # postgresql-codecs
 
-[![Maven](https://img.shields.io/badge/Maven-docs-blue)](https://codemine.io/postgresql-codecs.java/)
-[![Javadoc](https://img.shields.io/badge/Javadoc-API-green)](https://codemine.io/postgresql-codecs.java/apidocs/)
+[![Docs](https://img.shields.io/badge/Docs-all-white)](https://codemine.io/postgresql-codecs.java/)
+[![Maven](https://img.shields.io/badge/Maven-latest-blue)](https://codemine.io/postgresql-codecs.java/latest/)
+[![Javadoc](https://img.shields.io/badge/Javadoc-latest-green)](https://codemine.io/postgresql-codecs.java/latest/apidocs/)
 
 A driver-agnostic Java library for encoding and decoding PostgreSQL data types in both text and binary wire formats.
 

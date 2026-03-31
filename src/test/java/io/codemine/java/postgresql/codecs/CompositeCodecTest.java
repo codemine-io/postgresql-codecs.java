@@ -9,10 +9,11 @@ import net.jqwik.api.Group;
 import org.junit.jupiter.api.Test;
 
 /**
- * Unit tests for {@link CompositeCodec}, covering text and binary round-trips for four composite
+ * Unit tests for {@link CompositeCodec}, covering text and binary round-trips for five composite
  * scenarios:
  *
  * <ol>
+ *   <li>{@link SingleValueTests} – 1-field scalar composite {@code (value int4)}
  *   <li>{@link SimplePointTests} – 2-field scalar composite {@code (x int4, y int4)}
  *   <li>{@link NestedSegmentTests} – composite containing two composites {@code (start Point, end
  *       Point)}
@@ -30,6 +31,8 @@ class CompositeCodecTest {
 
   record Point(int x, int y) {}
 
+  record SingleValue(int value) {}
+
   record Segment(Point start, Point end) {}
 
   record TaggedData(String tag, List<String> items) {}
@@ -41,6 +44,13 @@ class CompositeCodecTest {
   // -----------------------------------------------------------------------
   // Composite codecs
   // -----------------------------------------------------------------------
+
+  static final CompositeCodec<SingleValue> SINGLE_VALUE_CODEC =
+      new CompositeCodec<>(
+          "",
+          "test_single_value",
+          (Integer value) -> new SingleValue(value),
+          new CompositeCodec.Field<>("value", SingleValue::value, Codec.INT4));
 
   static final CompositeCodec<Point> POINT_CODEC =
       new CompositeCodec<>(
@@ -156,6 +166,14 @@ class CompositeCodecTest {
   // Test groups — each extends CodecTestBase to get the full binary+text
   // round-trip property suite.
   // -----------------------------------------------------------------------
+
+  /** 1-field scalar composite: {@code (value int4)}. */
+  @Group
+  class SingleValueTests extends CodecTestBase<SingleValue> {
+    SingleValueTests() {
+      super(SINGLE_VALUE_CODEC);
+    }
+  }
 
   /** 2-field scalar composite: {@code (x int4, y int4)}. */
   @Group

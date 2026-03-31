@@ -32,6 +32,25 @@ public final class CompositeCodec<Z> implements Codec<Z> {
   private final boolean vararg;
 
   /**
+   * Creates a 1-field composite codec.
+   *
+   * @param <A> type of the single field
+   * @param schema PostgreSQL schema name, or empty/null for default search path
+   * @param name PostgreSQL composite type name
+   * @param construct constructor function
+   * @param fieldA single field descriptor
+   */
+  @SuppressWarnings("unchecked")
+  public <A> CompositeCodec(
+      String schema, String name, Function<A, Z> construct, Field<Z, A> fieldA) {
+    this.schema = schema;
+    this.pgName = name;
+    this.constructor = construct;
+    this.fields = new Field[] {fieldA};
+    this.vararg = false;
+  }
+
+  /**
    * Creates a 2-field composite codec.
    *
    * @param <A> type of the first field

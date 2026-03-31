@@ -10,9 +10,15 @@ import java.util.Random;
 final class ArrayCodec<A> implements Codec<List<A>> {
 
   private final Codec<A> elementCodec;
+  private final char delimiter;
 
   public ArrayCodec(Codec<A> elementCodec) {
+    this(elementCodec, ',');
+  }
+
+  public ArrayCodec(Codec<A> elementCodec, char delimiter) {
     this.elementCodec = elementCodec;
+    this.delimiter = delimiter;
   }
 
   @Override
@@ -50,60 +56,46 @@ final class ArrayCodec<A> implements Codec<List<A>> {
   // -----------------------------------------------------------------------
   @Override
   public void write(StringBuilder sb, List<A> value) {
-    char delim = elementCodec.arrayElementDelimiter();
     sb.append("{");
     for (int i = 0; i < value.size(); i++) {
       if (i > 0) {
-        sb.append(delim);
+        sb.append(delimiter);
       }
-      StringBuilder elemSb = new StringBuilder();
-      elementCodec.write(elemSb, value.get(i));
-      writeArrayElement(sb, elemSb, delim);
+      StringBuilder elem = new StringBuilder();
+      elementCodec.write(elem, value.get(i));
+      int len = elem.length();
+      if (len == 0) {
+        sb.append("\"\"");
+        continue;
+      }
+      boolean needsQuoting = false;
+      for (int j = 0; j < len; j++) {
+        char c = elem.charAt(j);
+        if (c == delimiter
+            || c == '{'
+            || c == '}'
+            || c == '"'
+            || c == '\\'
+            || Character.isWhitespace(c)) {
+          needsQuoting = true;
+          break;
+        }
+      }
+      if (needsQuoting) {
+        sb.append('"');
+        for (int j = 0; j < len; j++) {
+          char c = elem.charAt(j);
+          if (c == '"' || c == '\\') {
+            sb.append('\\');
+          }
+          sb.append(c);
+        }
+        sb.append('"');
+      } else {
+        sb.append(elem);
+      }
     }
     sb.append("}");
-  }
-
-  /**
-   * Writes a single array element in PostgreSQL array-literal notation, quoting and
-   * backslash-escaping the content when it contains reserved characters ({@code , {} " \} or
-   * whitespace) or when the element is the empty string.
-   *
-   * <p>The backslash-escape convention ({@code \"} and {@code \\}) is used because it is the form
-   * that the matching {@link #parse} implementation expects.
-   */
-  private static void writeArrayElement(StringBuilder out, StringBuilder elem, char delim) {
-    int len = elem.length();
-    if (len == 0) {
-      // Empty string must be quoted so it is not mistaken for NULL.
-      out.append("\"\"");
-      return;
-    }
-    boolean needsQuoting = false;
-    for (int i = 0; i < len; i++) {
-      char c = elem.charAt(i);
-      if (c == delim
-          || c == '{'
-          || c == '}'
-          || c == '"'
-          || c == '\\'
-          || Character.isWhitespace(c)) {
-        needsQuoting = true;
-        break;
-      }
-    }
-    if (!needsQuoting) {
-      out.append(elem);
-      return;
-    }
-    out.append('"');
-    for (int i = 0; i < len; i++) {
-      char c = elem.charAt(i);
-      if (c == '"' || c == '\\') {
-        out.append('\\');
-      }
-      out.append(c);
-    }
-    out.append('"');
   }
 
   /**
@@ -149,9 +141,8 @@ final class ArrayCodec<A> implements Codec<List<A>> {
         list.add(elementCodec.parse(elem.toString(), 0).value);
       } else {
         // Bare element: read until delimiter or '}'.
-        char delim = elementCodec.arrayElementDelimiter();
         int start = pos;
-        while (pos < input.length() && input.charAt(pos) != delim && input.charAt(pos) != '}') {
+        while (pos < input.length() && input.charAt(pos) != delimiter && input.charAt(pos) != '}') {
           pos++;
         }
         String elemStr = input.subSequence(start, pos).toString();
@@ -164,12 +155,13 @@ final class ArrayCodec<A> implements Codec<List<A>> {
       char sep = input.charAt(pos);
       if (sep == '}') {
         return new ParsingResult<>(list, pos + 1);
-      } else if (sep == elementCodec.arrayElementDelimiter()) {
+      } else if (sep == delimiter) {
         pos++;
       } else {
-        char delim = elementCodec.arrayElementDelimiter();
         throw new DecodingException(
-            input, offset, "Expected '" + delim + "' or '}' in array literal, got '" + sep + "'");
+            input,
+            offset,
+            "Expected '" + delimiter + "' or '}' in array literal, got '" + sep + "'");
       }
     }
     throw new DecodingException(input, offset, "Unexpected end of input parsing array");

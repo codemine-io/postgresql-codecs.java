@@ -100,20 +100,11 @@ public interface Codec<A> {
 
   /**
    * Returns an array codec whose element type is this codec. The returned codec uses PostgreSQL's
-   * array literal syntax ({@code {elem1,elem2,...}}) for text format and the standard binary array
-   * header for binary format.
+   * array literal syntax ({@code {elem1,elem2,...}} or {@code {elem1;elem2;...}}) for text format
+   * and the standard binary array header for binary format.
    */
   default Codec<List<A>> inDim() {
     return new ArrayCodec<>(this);
-  }
-
-  /**
-   * Returns the delimiter character used to separate elements in a PostgreSQL array literal for
-   * this type. Most types use {@code ','}, but {@code box} uses {@code ';'} because the box
-   * representation itself contains commas.
-   */
-  default char arrayElementDelimiter() {
-    return ',';
   }
 
   /**

@@ -33,7 +33,7 @@ final class CharCodec implements Codec<Byte> {
   }
 
   @Override
-  public void write(StringBuilder sb, Byte value) {
+  public void render(StringBuilder sb, Byte value) {
     sb.append((char) (value & 0xFF));
   }
 

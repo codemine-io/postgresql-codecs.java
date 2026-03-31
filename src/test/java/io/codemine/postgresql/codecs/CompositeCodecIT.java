@@ -172,7 +172,7 @@ class CompositeCodecIT {
       PGobject obj = new PGobject();
       obj.setType(codec.typeSig());
       StringBuilder sb = new StringBuilder();
-      codec.write(sb, value);
+      codec.render(sb, value);
       obj.setValue(sb.toString());
       ps.setObject(1, obj);
       try (ResultSet rs = ps.executeQuery()) {

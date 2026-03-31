@@ -23,7 +23,7 @@ final class Int4Codec implements Codec<Integer> {
   }
 
   @Override
-  public void write(StringBuilder sb, Integer value) {
+  public void render(StringBuilder sb, Integer value) {
     sb.append(value);
   }
 

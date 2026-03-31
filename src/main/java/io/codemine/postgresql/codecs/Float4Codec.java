@@ -23,7 +23,7 @@ final class Float4Codec implements Codec<Float> {
   }
 
   @Override
-  public void write(StringBuilder sb, Float value) {
+  public void render(StringBuilder sb, Float value) {
     if (Float.isNaN(value)) {
       sb.append("NaN");
     } else if (value == Float.POSITIVE_INFINITY) {

@@ -23,7 +23,7 @@ final class UuidCodec implements Codec<java.util.UUID> {
   }
 
   @Override
-  public void write(StringBuilder sb, java.util.UUID value) {
+  public void render(StringBuilder sb, java.util.UUID value) {
     sb.append(value.toString());
   }
 

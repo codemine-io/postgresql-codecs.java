@@ -28,7 +28,7 @@ final class TimestampCodec implements Codec<LocalDateTime> {
   }
 
   @Override
-  public void write(StringBuilder sb, LocalDateTime value) {
+  public void render(StringBuilder sb, LocalDateTime value) {
     pad4(sb, value.getYear());
     sb.append('-');
     pad2(sb, value.getMonthValue());

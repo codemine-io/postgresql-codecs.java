@@ -23,7 +23,7 @@ final class BitCodec implements Codec<Bit> {
   }
 
   @Override
-  public void write(StringBuilder sb, Bit value) {
+  public void render(StringBuilder sb, Bit value) {
     value.write(sb);
   }
 

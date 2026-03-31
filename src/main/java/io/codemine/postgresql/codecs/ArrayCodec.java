@@ -55,14 +55,14 @@ final class ArrayCodec<A> implements Codec<List<A>> {
   // Textual wire format
   // -----------------------------------------------------------------------
   @Override
-  public void write(StringBuilder sb, List<A> value) {
+  public void render(StringBuilder sb, List<A> value) {
     sb.append("{");
     for (int i = 0; i < value.size(); i++) {
       if (i > 0) {
         sb.append(delimiter);
       }
       StringBuilder elem = new StringBuilder();
-      elementCodec.write(elem, value.get(i));
+      elementCodec.render(elem, value.get(i));
       int len = elem.length();
       if (len == 0) {
         sb.append("\"\"");

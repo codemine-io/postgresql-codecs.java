@@ -49,7 +49,7 @@ public final class EnumCodec<E> implements Codec<E> {
   }
 
   @Override
-  public void write(StringBuilder sb, E value) {
+  public void render(StringBuilder sb, E value) {
     sb.append(pgLabels.get(value));
   }
 

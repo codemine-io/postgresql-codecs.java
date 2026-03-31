@@ -25,7 +25,7 @@ final class PolygonCodec implements Codec<Polygon> {
   }
 
   @Override
-  public void write(StringBuilder sb, Polygon value) {
+  public void render(StringBuilder sb, Polygon value) {
     sb.append('(');
     for (int i = 0; i < value.points().size(); i++) {
       if (i > 0) {

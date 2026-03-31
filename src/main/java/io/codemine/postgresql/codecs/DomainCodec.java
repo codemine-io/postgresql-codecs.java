@@ -51,8 +51,8 @@ final class DomainCodec<A> implements Codec<A> {
   }
 
   @Override
-  public void write(StringBuilder sb, A value) {
-    base.write(sb, value);
+  public void render(StringBuilder sb, A value) {
+    base.render(sb, value);
   }
 
   @Override

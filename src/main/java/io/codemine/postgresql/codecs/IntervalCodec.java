@@ -23,7 +23,7 @@ final class IntervalCodec implements Codec<Interval> {
   }
 
   @Override
-  public void write(StringBuilder sb, Interval value) {
+  public void render(StringBuilder sb, Interval value) {
     int months = value.month();
     int years = months / 12;
     int mons = months % 12;

@@ -25,7 +25,7 @@ final class PathCodec implements Codec<Path> {
   }
 
   @Override
-  public void write(StringBuilder sb, Path value) {
+  public void render(StringBuilder sb, Path value) {
     sb.append(value.closed() ? '(' : '[');
     for (int i = 0; i < value.points().size(); i++) {
       if (i > 0) {

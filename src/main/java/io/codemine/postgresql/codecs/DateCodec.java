@@ -27,7 +27,7 @@ final class DateCodec implements Codec<LocalDate> {
   }
 
   @Override
-  public void write(StringBuilder sb, LocalDate value) {
+  public void render(StringBuilder sb, LocalDate value) {
     sb.append(value);
   }
 

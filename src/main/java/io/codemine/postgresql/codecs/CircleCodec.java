@@ -23,7 +23,7 @@ final class CircleCodec implements Codec<Circle> {
   }
 
   @Override
-  public void write(StringBuilder sb, Circle value) {
+  public void render(StringBuilder sb, Circle value) {
     sb.append("<(");
     sb.append(Double.toString(value.x()));
     sb.append(',');

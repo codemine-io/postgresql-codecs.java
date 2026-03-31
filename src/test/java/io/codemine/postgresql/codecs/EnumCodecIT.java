@@ -171,7 +171,7 @@ class EnumCodecIT {
       PGobject obj = new PGobject();
       obj.setType("test_mood");
       StringBuilder sb = new StringBuilder();
-      MOOD_CODEC.write(sb, value);
+      MOOD_CODEC.render(sb, value);
       obj.setValue(sb.toString());
       ps.setObject(1, obj);
       try (ResultSet rs = ps.executeQuery()) {

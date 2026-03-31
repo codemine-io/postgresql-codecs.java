@@ -28,7 +28,7 @@ final class MoneyCodec implements Codec<Long> {
    * any currency symbol or grouping separators, which PostgreSQL accepts on all locales.
    */
   @Override
-  public void write(StringBuilder sb, Long value) {
+  public void render(StringBuilder sb, Long value) {
     // BigDecimal.valueOf(unscaled, scale) is safe for all long values including Long.MIN_VALUE.
     sb.append(BigDecimal.valueOf(value, 2).toPlainString());
   }

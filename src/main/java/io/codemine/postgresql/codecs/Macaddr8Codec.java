@@ -23,7 +23,7 @@ final class Macaddr8Codec implements Codec<Macaddr8> {
   }
 
   @Override
-  public void write(StringBuilder sb, Macaddr8 value) {
+  public void render(StringBuilder sb, Macaddr8 value) {
     sb.append(value);
   }
 

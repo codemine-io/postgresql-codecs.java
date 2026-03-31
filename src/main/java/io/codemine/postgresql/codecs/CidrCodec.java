@@ -23,7 +23,7 @@ final class CidrCodec implements Codec<Cidr> {
   }
 
   @Override
-  public void write(StringBuilder sb, Cidr value) {
+  public void render(StringBuilder sb, Cidr value) {
     value.write(sb);
   }
 

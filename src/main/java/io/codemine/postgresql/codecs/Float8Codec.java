@@ -23,7 +23,7 @@ final class Float8Codec implements Codec<Double> {
   }
 
   @Override
-  public void write(StringBuilder sb, Double value) {
+  public void render(StringBuilder sb, Double value) {
     if (Double.isNaN(value)) {
       sb.append("NaN");
     } else if (value == Double.POSITIVE_INFINITY) {

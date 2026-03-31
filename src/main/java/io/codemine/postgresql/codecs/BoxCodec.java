@@ -29,7 +29,7 @@ final class BoxCodec implements Codec<Box> {
   }
 
   @Override
-  public void write(StringBuilder sb, Box value) {
+  public void render(StringBuilder sb, Box value) {
     // Format: (x1,y1),(x2,y2) — no surrounding brackets
     sb.append('(');
     sb.append(Double.toString(value.x1()));

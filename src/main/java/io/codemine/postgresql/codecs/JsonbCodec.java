@@ -31,7 +31,7 @@ final class JsonbCodec implements Codec<JsonNode> {
   }
 
   @Override
-  public void write(StringBuilder sb, JsonNode value) {
+  public void render(StringBuilder sb, JsonNode value) {
     sb.append(value.toString());
   }
 

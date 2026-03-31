@@ -23,7 +23,7 @@ final class LsegCodec implements Codec<Lseg> {
   }
 
   @Override
-  public void write(StringBuilder sb, Lseg value) {
+  public void render(StringBuilder sb, Lseg value) {
     sb.append("[(");
     sb.append(Double.toString(value.x1()));
     sb.append(',');

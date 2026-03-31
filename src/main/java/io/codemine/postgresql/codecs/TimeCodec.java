@@ -24,7 +24,7 @@ final class TimeCodec implements Codec<LocalTime> {
   }
 
   @Override
-  public void write(StringBuilder sb, LocalTime value) {
+  public void render(StringBuilder sb, LocalTime value) {
     long micros = value.toNanoOfDay() / 1_000L;
     writeTime(sb, micros);
   }

@@ -156,7 +156,7 @@ public final class CompositeCodec<Z> implements Codec<Z> {
 
   @Override
   @SuppressWarnings("unchecked")
-  public void write(StringBuilder sb, Z value) {
+  public void render(StringBuilder sb, Z value) {
     sb.append('(');
     for (int i = 0; i < fields.length; i++) {
       if (i > 0) {
@@ -166,7 +166,7 @@ public final class CompositeCodec<Z> implements Codec<Z> {
       Object fieldValue = field.accessor.apply(value);
       if (fieldValue != null) {
         var fieldSb = new StringBuilder();
-        field.codec.write(fieldSb, fieldValue);
+        field.codec.render(fieldSb, fieldValue);
         int len = fieldSb.length();
         if (len == 0) {
           sb.append("\"\"");

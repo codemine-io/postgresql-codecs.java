@@ -23,7 +23,7 @@ final class LineCodec implements Codec<Line> {
   }
 
   @Override
-  public void write(StringBuilder sb, Line value) {
+  public void render(StringBuilder sb, Line value) {
     sb.append('{');
     sb.append(Double.toString(value.a()));
     sb.append(',');

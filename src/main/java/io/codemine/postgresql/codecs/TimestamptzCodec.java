@@ -29,7 +29,7 @@ final class TimestamptzCodec implements Codec<Instant> {
   }
 
   @Override
-  public void write(StringBuilder sb, Instant value) {
+  public void render(StringBuilder sb, Instant value) {
     long unixMicros = value.getEpochSecond() * 1_000_000L + value.getNano() / 1_000L;
     long epochSecond = Math.floorDiv(unixMicros, 1_000_000L);
     LocalDateTime dt = LocalDateTime.ofEpochSecond(epochSecond, 0, ZoneOffset.UTC);

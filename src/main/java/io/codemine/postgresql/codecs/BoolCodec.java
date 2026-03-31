@@ -23,7 +23,7 @@ final class BoolCodec implements Codec<Boolean> {
   }
 
   @Override
-  public void write(StringBuilder sb, Boolean value) {
+  public void render(StringBuilder sb, Boolean value) {
     sb.append(value ? 't' : 'f');
   }
 

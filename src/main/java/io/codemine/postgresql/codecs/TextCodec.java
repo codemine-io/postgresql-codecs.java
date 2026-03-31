@@ -24,7 +24,7 @@ final class TextCodec implements Codec<String> {
   }
 
   @Override
-  public void write(StringBuilder sb, String value) {
+  public void render(StringBuilder sb, String value) {
     sb.append(value);
   }
 

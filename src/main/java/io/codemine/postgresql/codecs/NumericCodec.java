@@ -30,7 +30,7 @@ final class NumericCodec implements Codec<BigDecimal> {
   }
 
   @Override
-  public void write(StringBuilder sb, BigDecimal value) {
+  public void render(StringBuilder sb, BigDecimal value) {
     sb.append(value.toPlainString());
   }
 

@@ -23,7 +23,7 @@ final class OidCodec implements Codec<Integer> {
   }
 
   @Override
-  public void write(StringBuilder sb, Integer value) {
+  public void render(StringBuilder sb, Integer value) {
     sb.append(Integer.toUnsignedString(value));
   }
 

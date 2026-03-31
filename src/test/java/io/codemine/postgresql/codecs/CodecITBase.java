@@ -308,7 +308,7 @@ abstract class CodecITBase<A> {
         obj.setType(codec.typeSig());
         {
           StringBuilder sb = new StringBuilder();
-          codec.write(sb, value);
+          codec.render(sb, value);
           obj.setValue(sb.toString());
         }
         ps.setObject(1, obj);
@@ -371,7 +371,7 @@ abstract class CodecITBase<A> {
         obj.setType(arrayCodec.typeSig());
         {
           StringBuilder sb = new StringBuilder();
-          arrayCodec.write(sb, value);
+          arrayCodec.render(sb, value);
           obj.setValue(sb.toString());
         }
         ps.setObject(1, obj);

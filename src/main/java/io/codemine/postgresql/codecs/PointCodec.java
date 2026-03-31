@@ -23,7 +23,7 @@ final class PointCodec implements Codec<Point> {
   }
 
   @Override
-  public void write(StringBuilder sb, Point value) {
+  public void render(StringBuilder sb, Point value) {
     sb.append('(');
     sb.append(Double.toString(value.x()));
     sb.append(',');

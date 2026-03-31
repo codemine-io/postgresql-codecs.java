@@ -31,8 +31,8 @@ final class MappedCodec<A, B> implements Codec<B> {
     return codec.arrayOid();
   }
 
-  public void write(StringBuilder sb, B value) {
-    codec.write(sb, fromMapped.apply(value));
+  public void render(StringBuilder sb, B value) {
+    codec.render(sb, fromMapped.apply(value));
   }
 
   @Override

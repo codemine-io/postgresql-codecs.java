@@ -50,7 +50,7 @@ abstract class CodecTestBase<A> {
   @Property(tries = 100)
   void decodesEncodedInText(@ForAll("values") A value) throws Exception {
     StringBuilder sb = new StringBuilder();
-    codec.write(sb, value);
+    codec.render(sb, value);
     String encoded = sb.toString();
     A decoded = codec.parse(encoded, 0).value;
     assertEquals(value, decoded);
@@ -66,7 +66,7 @@ abstract class CodecTestBase<A> {
   @Property(tries = 100)
   void decodesArrayEncodedInText(@ForAll("arrayValues") List<A> value) throws Exception {
     StringBuilder sb = new StringBuilder();
-    arrayCodec.write(sb, value);
+    arrayCodec.render(sb, value);
     String encoded = sb.toString();
     List<A> decoded = arrayCodec.parse(encoded, 0).value;
     assertEquals(value, decoded);
@@ -85,7 +85,7 @@ abstract class CodecTestBase<A> {
   void decodesArrayArrayEncodedInText(@ForAll("arrayArrayValues") List<List<A>> value)
       throws Exception {
     StringBuilder sb = new StringBuilder();
-    arrayArrayCodec.write(sb, value);
+    arrayArrayCodec.render(sb, value);
     String encoded = sb.toString();
     List<List<A>> decoded = arrayArrayCodec.parse(encoded, 0).value;
     assertEquals(value, decoded);

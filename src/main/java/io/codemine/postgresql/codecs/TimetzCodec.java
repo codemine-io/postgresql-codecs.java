@@ -25,7 +25,7 @@ final class TimetzCodec implements Codec<Timetz> {
   }
 
   @Override
-  public void write(StringBuilder sb, Timetz value) {
+  public void render(StringBuilder sb, Timetz value) {
     // Write hh:mm:ss[.ffffff]
     long total = value.time();
     long hours = total / 3_600_000_000L;

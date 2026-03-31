@@ -23,7 +23,7 @@ final class Int2Codec implements Codec<Short> {
   }
 
   @Override
-  public void write(StringBuilder sb, Short value) {
+  public void render(StringBuilder sb, Short value) {
     sb.append(value);
   }
 

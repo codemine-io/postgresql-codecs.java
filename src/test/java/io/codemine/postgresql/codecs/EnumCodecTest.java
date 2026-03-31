@@ -58,7 +58,7 @@ public class EnumCodecTest extends CodecTestBase<EnumCodecTest.Color> {
   // -----------------------------------------------------------------------
   private String writeToString(Color value) {
     StringBuilder sb = new StringBuilder();
-    COLOR_CODEC.write(sb, value);
+    COLOR_CODEC.render(sb, value);
     return sb.toString();
   }
 }

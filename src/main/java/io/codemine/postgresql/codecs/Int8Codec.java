@@ -23,7 +23,7 @@ final class Int8Codec implements Codec<Long> {
   }
 
   @Override
-  public void write(StringBuilder sb, Long value) {
+  public void render(StringBuilder sb, Long value) {
     sb.append(value);
   }
 

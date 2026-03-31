@@ -23,8 +23,8 @@ final class VarbitCodec implements Codec<Bit> {
   }
 
   @Override
-  public void write(StringBuilder sb, Bit value) {
-    Codec.BIT.write(sb, value);
+  public void render(StringBuilder sb, Bit value) {
+    Codec.BIT.render(sb, value);
   }
 
   @Override

@@ -26,7 +26,7 @@ final class ByteaCodec implements Codec<Bytea> {
   }
 
   @Override
-  public void write(StringBuilder sb, Bytea value) {
+  public void render(StringBuilder sb, Bytea value) {
     sb.append("\\x");
     sb.append(HEX.formatHex(value.bytes()));
   }

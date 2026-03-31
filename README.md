@@ -162,7 +162,7 @@ Codec<String> emailCodec = Codec.TEXT.withType("", "email", scalarOid, arrayOid)
 
 ## Usage with JDBC (pgjdbc)
 
-Use `Codec.encodeToText` to encode a value as a PostgreSQL text literal and wrap it in a `PGobject`. Use `Codec.decodeFromText` to decode the text column returned by the driver.
+Use `Codec.renderAsString` to encode a value as a PostgreSQL text literal and wrap it in a `PGobject`. Use `Codec.parseString` to decode the text column returned by the driver.
 
 ```java
 import io.codemine.postgresql.codecs.Codec;
@@ -173,7 +173,7 @@ Codec<Integer> codec = Codec.INT4;
 
 PGobject obj = new PGobject();
 obj.setType(codec.typeSig());          // e.g. "int4"
-obj.setValue(codec.encodeToText(42));
+obj.setValue(codec.renderAsString(42));
 
 PreparedStatement ps = connection.prepareStatement("INSERT INTO t (col) VALUES (?)");
 ps.setObject(1, obj);
@@ -184,7 +184,7 @@ PreparedStatement q = connection.prepareStatement("SELECT col FROM t WHERE id = 
 q.setInt(1, 1);
 ResultSet rs = q.executeQuery();
 if (rs.next()) {
-    Integer value = codec.decodeFromText(rs.getString("col"));
+    Integer value = codec.parseString(rs.getString("col"));
 }
 ```
 
@@ -195,7 +195,7 @@ Codec<List<Integer>> arrayCodec = Codec.INT4.inDim();
 
 PGobject arr = new PGobject();
 arr.setType(arrayCodec.typeSig());     // "int4[]"
-arr.setValue(arrayCodec.encodeToText(List.of(1, 2, 3)));
+arr.setValue(arrayCodec.renderAsString(List.of(1, 2, 3)));
 ```
 
 ## Usage with R2DBC (r2dbc-postgresql)

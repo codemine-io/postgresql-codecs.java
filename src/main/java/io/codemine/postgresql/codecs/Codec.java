@@ -222,17 +222,6 @@ public interface Codec<A> {
   }
 
   /**
-   * Decodes a value from a byte array in the PostgreSQL binary wire format. Convenience wrapper
-   * around {@link #decodeInBinary(ByteBuffer, int)}.
-   *
-   * @throws DecodingException if the binary data is malformed
-   * @throws UnsupportedOperationException if binary decoding is not implemented for this type
-   */
-  default A decodeFromBytes(byte[] bytes) throws DecodingException {
-    return decodeInBinary(ByteBuffer.wrap(bytes), bytes.length);
-  }
-
-  /**
    * Decodes a value from the PostgreSQL binary wire format.
    *
    * <p>{@code buf} must be a big-endian {@link ByteBuffer} positioned at the first byte of the
@@ -247,6 +236,17 @@ public interface Codec<A> {
    * @throws UnsupportedOperationException if binary decoding is not implemented for this type
    */
   A decodeInBinary(ByteBuffer buf, int length) throws DecodingException;
+
+  /**
+   * Decodes a value from a byte array in the PostgreSQL binary wire format. Convenience wrapper
+   * around {@link #decodeInBinary(ByteBuffer, int)}.
+   *
+   * @throws DecodingException if the binary data is malformed
+   * @throws UnsupportedOperationException if binary decoding is not implemented for this type
+   */
+  default A decodeFromBytes(byte[] bytes) throws DecodingException {
+    return decodeInBinary(ByteBuffer.wrap(bytes), bytes.length);
+  }
 
   /**
    * Generates a random value of type A, for testing purposes. The provided {@link Random} instance

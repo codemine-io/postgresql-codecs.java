@@ -1,9 +1,0 @@
-package io.codemine.postgresql.codecs;
-
-import java.time.Instant;
-
-public class TstzMultirangeCodecTest extends CodecTestBase<Multirange<Instant>> {
-  public TstzMultirangeCodecTest() {
-    super(Codec.TSTZMULTIRANGE);
-  }
-}

@@ -165,7 +165,7 @@ Codec<String> emailCodec = Codec.TEXT.withType("", "email", scalarOid, arrayOid)
 Use `Codec.encodeInTextToString` to encode a value as a PostgreSQL text literal and wrap it in a `PGobject`. Use `Codec.decodeInTextFromString` to decode the text column returned by the driver.
 
 ```java
-import io.codemine.postgresql.codecs.Codec;
+import io.codemine.java.postgresql.codecs.Codec;
 import org.postgresql.util.PGobject;
 
 // --- Encoding ---
@@ -204,7 +204,7 @@ In [`./src/test/java/io/codemine/postgresql/BinaryInBinaryOutR2dbcCodec.java`](.
 
 ```java
 import io.codemine.postgresql.BinaryInBinaryOutR2dbcCodec;
-import io.codemine.postgresql.codecs.Codec;
+import io.codemine.java.postgresql.codecs.Codec;
 import io.r2dbc.postgresql.PostgresqlConnectionConfiguration;
 import io.r2dbc.postgresql.PostgresqlConnectionFactory;
 import reactor.core.publisher.Mono;

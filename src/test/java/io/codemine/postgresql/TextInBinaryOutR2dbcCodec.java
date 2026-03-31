@@ -1,6 +1,6 @@
 package io.codemine.postgresql;
 
-import io.codemine.postgresql.codecs.Codec.DecodingException;
+import io.codemine.java.postgresql.codecs.Codec.DecodingException;
 import io.netty.buffer.Unpooled;
 import io.r2dbc.postgresql.client.EncodedParameter;
 import io.r2dbc.postgresql.codec.CodecMetadata;
@@ -13,7 +13,7 @@ import java.util.Collections;
 import reactor.core.publisher.Mono;
 
 /**
- * Adapts a {@link io.codemine.postgresql.codecs.Codec} to the r2dbc-postgresql {@link
+ * Adapts a {@link io.codemine.java.postgresql.codecs.Codec} to the r2dbc-postgresql {@link
  * io.r2dbc.postgresql.codec.Codec} SPI using <b>text format for parameter encoding</b> and
  * <b>binary format for result decoding</b>.
  *
@@ -23,10 +23,11 @@ import reactor.core.publisher.Mono;
 public class TextInBinaryOutR2dbcCodec<A>
     implements io.r2dbc.postgresql.codec.Codec<A>, CodecMetadata {
 
-  private final io.codemine.postgresql.codecs.Codec<A> codec;
+  private final io.codemine.java.postgresql.codecs.Codec<A> codec;
   private final Class<A> type;
 
-  public TextInBinaryOutR2dbcCodec(io.codemine.postgresql.codecs.Codec<A> codec, Class<A> type) {
+  public TextInBinaryOutR2dbcCodec(
+      io.codemine.java.postgresql.codecs.Codec<A> codec, Class<A> type) {
     this.codec = codec;
     this.type = type;
   }

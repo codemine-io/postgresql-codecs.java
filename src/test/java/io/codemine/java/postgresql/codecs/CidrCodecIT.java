@@ -1,0 +1,7 @@
+package io.codemine.java.postgresql.codecs;
+
+public class CidrCodecIT extends CodecITBase<Cidr> {
+  public CidrCodecIT() {
+    super(Codec.CIDR, Cidr.class);
+  }
+}

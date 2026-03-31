@@ -1,0 +1,7 @@
+package io.codemine.java.postgresql.codecs;
+
+public class InetCodecTest extends CodecTestBase<Inet> {
+  public InetCodecTest() {
+    super(Codec.INET);
+  }
+}

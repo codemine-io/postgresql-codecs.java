@@ -68,24 +68,39 @@ public interface Codec<A> {
   /**
    * Returns a codec for PostgreSQL {@code bit(n)} — a fixed-length bit string of exactly {@code n}
    * bits.
+   *
+   * <p>If {@code n <= 0}, this returns the unparameterized {@link #BIT} codec.
    */
   static Codec<Bit> bit(int n) {
+    if (n <= 0) {
+      return BIT;
+    }
     return new BitCodec(n);
   }
 
   /**
    * Returns a codec for PostgreSQL {@code varbit(n)} — a variable-length bit string of at most
    * {@code n} bits.
+   *
+   * <p>If {@code n <= 0}, this returns the unparameterized {@link #VARBIT} codec.
    */
   static Codec<Bit> varbit(int n) {
+    if (n <= 0) {
+      return VARBIT;
+    }
     return new VarbitCodec(n);
   }
 
   /**
    * Returns a codec for PostgreSQL {@code varchar(n)} — a variable-length character string of at
    * most {@code n} characters.
+   *
+   * <p>If {@code n <= 0}, this returns the unparameterized {@link #VARCHAR} codec.
    */
   static Codec<String> varchar(int n) {
+    if (n <= 0) {
+      return VARCHAR;
+    }
     return new VarcharCodec(n);
   }
 

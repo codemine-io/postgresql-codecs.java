@@ -305,7 +305,7 @@ abstract class CodecITBase<A> {
     try (var ps = pgjdbcConnection.prepareStatement("SELECT ?")) {
       if (value != null) {
         PGobject obj = new PGobject();
-        obj.setType(codec.typeSig());
+        obj.setType(codec.pgjdbcTypeSig());
         {
           StringBuilder sb = new StringBuilder();
           codec.encodeInText(sb, value);
@@ -368,7 +368,7 @@ abstract class CodecITBase<A> {
     try (var ps = pgjdbcConnection.prepareStatement("SELECT ?")) {
       if (value != null) {
         PGobject obj = new PGobject();
-        obj.setType(arrayCodec.typeSig());
+        obj.setType(arrayCodec.pgjdbcTypeSig());
         {
           StringBuilder sb = new StringBuilder();
           arrayCodec.encodeInText(sb, value);

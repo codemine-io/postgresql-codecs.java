@@ -65,6 +65,38 @@ public interface Codec<A> {
   Codec<Bit> BIT = new BitCodec();
   Codec<Bit> VARBIT = new VarbitCodec();
 
+  /**
+   * Returns a codec for PostgreSQL {@code bit(n)} — a fixed-length bit string of exactly {@code n}
+   * bits.
+   */
+  static Codec<Bit> bit(int n) {
+    return new BitCodec(n);
+  }
+
+  /**
+   * Returns a codec for PostgreSQL {@code varbit(n)} — a variable-length bit string of at most
+   * {@code n} bits.
+   */
+  static Codec<Bit> varbit(int n) {
+    return new VarbitCodec(n);
+  }
+
+  /**
+   * Returns a codec for PostgreSQL {@code varchar(n)} — a variable-length character string of at
+   * most {@code n} characters.
+   */
+  static Codec<String> varchar(int n) {
+    return new VarcharCodec(n);
+  }
+
+  /**
+   * Returns a codec for PostgreSQL {@code bpchar(n)} — a fixed-length blank-padded character string
+   * of exactly {@code n} characters.
+   */
+  static Codec<String> bpchar(int n) {
+    return new BpcharCodec(n);
+  }
+
   // -----------------------------------------------------------------------
   // Type metadata
   // -----------------------------------------------------------------------

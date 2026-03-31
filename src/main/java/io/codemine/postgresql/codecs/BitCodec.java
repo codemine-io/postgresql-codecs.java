@@ -7,9 +7,25 @@ import java.util.Random;
 /** Codec for PostgreSQL {@code bit} (fixed-length bit string) values. */
 final class BitCodec implements Codec<Bit> {
 
+  private final int size;
+
+  BitCodec() {
+    this(0);
+  }
+
+  BitCodec(int size) {
+    if (size < 0) throw new IllegalArgumentException("size must be >= 0, got: " + size);
+    this.size = size;
+  }
+
   @Override
   public String name() {
     return "bit";
+  }
+
+  @Override
+  public String typeSig() {
+    return size > 0 ? "bit(" + size + ")" : "bit";
   }
 
   @Override
@@ -68,8 +84,8 @@ final class BitCodec implements Codec<Bit> {
   }
 
   @Override
-  public Bit random(Random r, int size) {
-    int len = size == 0 ? 1 : r.nextInt(1, size + 1);
+  public Bit random(Random r, int randomSize) {
+    int len = size > 0 ? size : (randomSize == 0 ? 1 : r.nextInt(1, randomSize + 1));
     int numBytes = (len + 7) / 8;
     byte[] data = new byte[numBytes];
     r.nextBytes(data);

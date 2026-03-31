@@ -7,9 +7,25 @@ import java.util.Random;
 /** Codec for PostgreSQL {@code varbit} (variable-length bit string) values. */
 final class VarbitCodec implements Codec<Bit> {
 
+  private final int maxSize;
+
+  VarbitCodec() {
+    this(0);
+  }
+
+  VarbitCodec(int maxSize) {
+    if (maxSize < 0) throw new IllegalArgumentException("maxSize must be >= 0, got: " + maxSize);
+    this.maxSize = maxSize;
+  }
+
   @Override
   public String name() {
     return "varbit";
+  }
+
+  @Override
+  public String typeSig() {
+    return maxSize > 0 ? "varbit(" + maxSize + ")" : "varbit";
   }
 
   @Override
@@ -45,6 +61,7 @@ final class VarbitCodec implements Codec<Bit> {
 
   @Override
   public Bit random(Random r, int size) {
-    return Codec.BIT.random(r, size);
+    int effectiveMax = maxSize > 0 ? maxSize : size;
+    return Codec.BIT.random(r, effectiveMax);
   }
 }

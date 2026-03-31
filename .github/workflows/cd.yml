@@ -14,8 +14,6 @@ jobs:
     permissions:
       contents: write
       packages: write
-      pages: write
-      id-token: write
 
     steps:
       - name: Validate SemVer version format
@@ -44,13 +42,11 @@ jobs:
       - name: Generate documentation site
         run: mvn site -DskipTests
 
-      - name: Upload site
-        uses: actions/upload-pages-artifact@v4
+      - name: Deploy documentation to /${{ inputs.version }}
+        uses: ./.github/actions/deploy-docs
         with:
-          path: target/site
-
-      - name: Deploy site to GitHub Pages
-        uses: actions/deploy-pages@v4
+          subdirectory: ${{ inputs.version }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish to GitHub Packages
         run: mvn --batch-mode deploy -DskipTests
@@ -64,7 +60,18 @@ jobs:
           commit_message: Set package version to ${{ inputs.version }}
           file_pattern: pom.xml
 
+      - name: Determine documentation URL
+        id: docs-url
+        run: |
+          PAGES_URL="https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}"
+          echo "url=${PAGES_URL}/${{ inputs.version }}/" >> "$GITHUB_OUTPUT"
+
       - name: Create GitHub release
-        run: gh release create "v${{ inputs.version }}" --title "v${{ inputs.version }}" --generate-notes --target ${{ steps.commit.outputs.commit_hash }}
+        run: |
+          gh release create "v${{ inputs.version }}" \
+            --title "v${{ inputs.version }}" \
+            --notes "📖 [Documentation](${{ steps.docs-url.outputs.url }})" \
+            --generate-notes \
+            --target ${{ steps.commit.outputs.commit_hash }}
         env:
           GH_TOKEN: ${{ github.token }}

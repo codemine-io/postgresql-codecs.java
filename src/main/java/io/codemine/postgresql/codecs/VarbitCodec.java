@@ -61,7 +61,7 @@ final class VarbitCodec implements Codec<Bit> {
 
   @Override
   public Bit random(Random r, int size) {
-    int effectiveMax = maxSize > 0 ? maxSize : size;
-    return Codec.BIT.random(r, effectiveMax);
+    int upperBound = maxSize > 0 ? Math.min(maxSize, size) : size;
+    return Codec.BIT.random(r, upperBound);
   }
 }

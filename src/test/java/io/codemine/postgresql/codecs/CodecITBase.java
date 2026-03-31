@@ -209,7 +209,8 @@ abstract class CodecITBase<A> {
   }
 
   private A roundtripViaR2dbc(Connection r2conn, A value) {
-    return Flux.from(r2conn.createStatement("SELECT $1").bind(0, value).execute())
+    return Flux.from(
+            r2conn.createStatement("SELECT $1::" + codec.typeSig()).bind(0, value).execute())
         .flatMap(result -> result.map((row, meta) -> row.get(0, type)))
         .single()
         .block();
@@ -218,7 +219,11 @@ abstract class CodecITBase<A> {
   @SuppressWarnings("unchecked")
   private List<A> roundtripArrayViaR2dbc(Connection r2conn, List<A> value) {
     return (List<A>)
-        Flux.from(r2conn.createStatement("SELECT $1").bind(0, value).execute())
+        Flux.from(
+                r2conn
+                    .createStatement("SELECT $1::" + arrayCodec.typeSig())
+                    .bind(0, value)
+                    .execute())
             .flatMap(result -> result.map((row, meta) -> row.get(0, List.class)))
             .single()
             .block();
@@ -302,7 +307,7 @@ abstract class CodecITBase<A> {
 
   @Property(tries = 100)
   void roundtripsInTextToTextViaPgjdbc(@ForAll("values") A value) throws Exception {
-    try (var ps = pgjdbcConnection.prepareStatement("SELECT ?")) {
+    try (var ps = pgjdbcConnection.prepareStatement("SELECT ?::" + codec.typeSig())) {
       if (value != null) {
         PGobject obj = new PGobject();
         obj.setType(qualifiedCodecName(codec));
@@ -365,7 +370,7 @@ abstract class CodecITBase<A> {
 
   @Property(tries = 100)
   void arrayRoundtripsInTextToTextViaPgjdbc(@ForAll("arrayValues") List<A> value) throws Exception {
-    try (var ps = pgjdbcConnection.prepareStatement("SELECT ?")) {
+    try (var ps = pgjdbcConnection.prepareStatement("SELECT ?::" + arrayCodec.typeSig())) {
       if (value != null) {
         PGobject obj = new PGobject();
         obj.setType(qualifiedCodecName(arrayCodec));

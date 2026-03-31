@@ -24,13 +24,13 @@ final class TimeCodec implements Codec<LocalTime> {
   }
 
   @Override
-  public void write(StringBuilder sb, LocalTime value) {
+  public void encodeInText(StringBuilder sb, LocalTime value) {
     long micros = value.toNanoOfDay() / 1_000L;
     writeTime(sb, micros);
   }
 
   @Override
-  public Codec.ParsingResult<LocalTime> parse(CharSequence input, int offset)
+  public Codec.ParsingResult<LocalTime> decodeInText(CharSequence input, int offset)
       throws Codec.DecodingException {
     String s = input.subSequence(offset, input.length()).toString().trim();
     try {

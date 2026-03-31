@@ -29,21 +29,12 @@ final class BoxCodec implements Codec<Box> {
   }
 
   @Override
-  public void write(StringBuilder sb, Box value) {
-    // Format: (x1,y1),(x2,y2) — no surrounding brackets
-    sb.append('(');
-    sb.append(Double.toString(value.x1()));
-    sb.append(',');
-    sb.append(Double.toString(value.y1()));
-    sb.append("),(");
-    sb.append(Double.toString(value.x2()));
-    sb.append(',');
-    sb.append(Double.toString(value.y2()));
-    sb.append(')');
+  public void encodeInText(StringBuilder sb, Box value) {
+    value.appendInTextTo(sb);
   }
 
   @Override
-  public Codec.ParsingResult<Box> parse(CharSequence input, int offset)
+  public Codec.ParsingResult<Box> decodeInText(CharSequence input, int offset)
       throws Codec.DecodingException {
     String s = input.subSequence(offset, input.length()).toString().trim();
     try {

@@ -53,7 +53,7 @@ public class TextInTextOutR2dbcCodec<A>
   @SuppressWarnings("unchecked")
   public EncodedParameter encode(Object value, int dataType) {
     StringBuilder sb = new StringBuilder();
-    codec.write(sb, (A) value);
+    codec.encodeInText(sb, (A) value);
     byte[] bytes = sb.toString().getBytes(StandardCharsets.UTF_8);
     return new EncodedParameter(
         Format.FORMAT_TEXT, dataType, Mono.just(Unpooled.wrappedBuffer(bytes)));
@@ -105,7 +105,7 @@ public class TextInTextOutR2dbcCodec<A>
     buffer.readBytes(bytes);
     String text = new String(bytes, StandardCharsets.UTF_8);
     try {
-      return codec.parse(text, 0).value;
+      return codec.decodeInText(text, 0).value;
     } catch (DecodingException e) {
       throw new RuntimeException(e);
     }

@@ -23,12 +23,12 @@ final class OidCodec implements Codec<Integer> {
   }
 
   @Override
-  public void write(StringBuilder sb, Integer value) {
+  public void encodeInText(StringBuilder sb, Integer value) {
     sb.append(Integer.toUnsignedString(value));
   }
 
   @Override
-  public Codec.ParsingResult<Integer> parse(CharSequence input, int offset)
+  public Codec.ParsingResult<Integer> decodeInText(CharSequence input, int offset)
       throws Codec.DecodingException {
     try {
       int value =

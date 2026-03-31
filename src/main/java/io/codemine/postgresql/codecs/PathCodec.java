@@ -25,24 +25,12 @@ final class PathCodec implements Codec<Path> {
   }
 
   @Override
-  public void write(StringBuilder sb, Path value) {
-    sb.append(value.closed() ? '(' : '[');
-    for (int i = 0; i < value.points().size(); i++) {
-      if (i > 0) {
-        sb.append(',');
-      }
-      Point p = value.points().get(i);
-      sb.append('(');
-      sb.append(Double.toString(p.x()));
-      sb.append(',');
-      sb.append(Double.toString(p.y()));
-      sb.append(')');
-    }
-    sb.append(value.closed() ? ')' : ']');
+  public void encodeInText(StringBuilder sb, Path value) {
+    value.appendInTextTo(sb);
   }
 
   @Override
-  public Codec.ParsingResult<Path> parse(CharSequence input, int offset)
+  public Codec.ParsingResult<Path> decodeInText(CharSequence input, int offset)
       throws Codec.DecodingException {
     String s = input.subSequence(offset, input.length()).toString().trim();
     try {

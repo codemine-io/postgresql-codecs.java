@@ -23,12 +23,12 @@ final class Int8Codec implements Codec<Long> {
   }
 
   @Override
-  public void write(StringBuilder sb, Long value) {
+  public void encodeInText(StringBuilder sb, Long value) {
     sb.append(value);
   }
 
   @Override
-  public Codec.ParsingResult<Long> parse(CharSequence input, int offset)
+  public Codec.ParsingResult<Long> decodeInText(CharSequence input, int offset)
       throws Codec.DecodingException {
     try {
       long value = Long.parseLong(input.subSequence(offset, input.length()).toString().trim());

@@ -13,12 +13,15 @@ import java.util.function.Function;
  * <p>Each codec supports two wire formats:
  *
  * <ul>
- *   <li><b>Textual</b> — the PostgreSQL text representation, used via {@link #write} and {@link
- *       #parse}. These methods are also used when encoding composite and array fields inside a
- *       composite/array literal.
- *   <li><b>Binary</b> — the PostgreSQL binary wire format, used via {@link #encodeInBinary} and
- *       {@link #decodeInBinary}. Binary encoding is compact, unambiguous and required when
- *       assembling composite or array values in binary protocol mode.
+ *   <li><b>Textual</b> — the PostgreSQL text representation. Low-level: {@link #encodeInText} and
+ *       {@link #decodeInText}. Convenience: {@link #encodeInTextToString} and {@link
+ *       #decodeInTextFromString}. The low-level methods are also used when encoding composite and
+ *       array fields inside a composite/array literal.
+ *   <li><b>Binary</b> — the PostgreSQL binary wire format. Low-level: {@link #encodeInBinary} and
+ *       {@link #decodeInBinary}. Convenience: {@link #encodeInBinaryToBytes}, {@link
+ *       #encodeInBinaryToByteBuffer}, and {@link #decodeInBinaryFromBytes}. Binary encoding is
+ *       compact, unambiguous and required when assembling composite or array values in binary
+ *       protocol mode.
  * </ul>
  *
  * @param <A> the type of the value
@@ -57,7 +60,7 @@ public interface Codec<A> {
   Codec<Path> PATH = new PathCodec();
   Codec<Polygon> POLYGON = new PolygonCodec();
   Codec<Circle> CIRCLE = new CircleCodec();
-  Codec<Inet> CIDR = new CidrCodec();
+  Codec<Cidr> CIDR = new CidrCodec();
   Codec<Macaddr8> MACADDR8 = new Macaddr8Codec();
   Codec<Bit> BIT = new BitCodec();
   Codec<Bit> VARBIT = new VarbitCodec();
@@ -145,7 +148,17 @@ public interface Codec<A> {
    * <p>This is primarily used for encoding fields inside composite and array literals. The written
    * form must be the canonical text representation accepted by PostgreSQL for the type.
    */
-  void write(StringBuilder sb, A value);
+  void encodeInText(StringBuilder sb, A value);
+
+  /**
+   * Encodes the given non-null value as a PostgreSQL text literal and returns it as a {@link
+   * String}. Convenience wrapper around {@link #encodeInText(StringBuilder, Object)}.
+   */
+  default String encodeInTextToString(A value) {
+    var sb = new StringBuilder();
+    encodeInText(sb, value);
+    return sb.toString();
+  }
 
   /**
    * Parses a PostgreSQL text-format literal of type A from {@code input} starting at {@code
@@ -162,7 +175,18 @@ public interface Codec<A> {
    * the input. Throws {@link DecodingException} if the input cannot be interpreted as a valid
    * literal of type A.
    */
-  ParsingResult<A> parse(CharSequence input, int offset) throws DecodingException;
+  ParsingResult<A> decodeInText(CharSequence input, int offset) throws DecodingException;
+
+  /**
+   * Decodes a PostgreSQL text-format literal of type A from the given string. Convenience wrapper
+   * around {@link #decodeInText(CharSequence, int)} that passes the full string starting at offset
+   * 0.
+   *
+   * @throws DecodingException if the input cannot be interpreted as a valid literal of type A
+   */
+  default A decodeInTextFromString(String input) throws DecodingException {
+    return decodeInText(input, 0).value;
+  }
 
   // -----------------------------------------------------------------------
   // Binary wire format
@@ -185,7 +209,7 @@ public interface Codec<A> {
    * Convenience overload that encodes the value into a freshly-allocated byte array and returns it.
    * Delegates to {@link #encodeInBinary(Object, ByteArrayOutputStream)}.
    */
-  default byte[] encodeInBinaryAsByteArray(A value) {
+  default byte[] encodeInBinaryToBytes(A value) {
     var out = new ByteArrayOutputStream();
     encodeInBinary(value, out);
     return out.toByteArray();
@@ -193,10 +217,10 @@ public interface Codec<A> {
 
   /**
    * Convenience overload that encodes the value into a {@link ByteBuffer}. Delegates to {@link
-   * #encodeInBinaryAsByteArray(Object)}.
+   * #encodeInBinaryToBytes(Object)}.
    */
-  default ByteBuffer encodeInBinaryAsByteBuffer(A value) {
-    return ByteBuffer.wrap(encodeInBinaryAsByteArray(value));
+  default ByteBuffer encodeInBinaryToByteBuffer(A value) {
+    return ByteBuffer.wrap(encodeInBinaryToBytes(value));
   }
 
   /**
@@ -214,6 +238,17 @@ public interface Codec<A> {
    * @throws UnsupportedOperationException if binary decoding is not implemented for this type
    */
   A decodeInBinary(ByteBuffer buf, int length) throws DecodingException;
+
+  /**
+   * Decodes a value from a byte array in the PostgreSQL binary wire format. Convenience wrapper
+   * around {@link #decodeInBinary(ByteBuffer, int)}.
+   *
+   * @throws DecodingException if the binary data is malformed
+   * @throws UnsupportedOperationException if binary decoding is not implemented for this type
+   */
+  default A decodeInBinaryFromBytes(byte[] bytes) throws DecodingException {
+    return decodeInBinary(ByteBuffer.wrap(bytes), bytes.length);
+  }
 
   /**
    * Generates a random value of type A, for testing purposes. The provided {@link Random} instance
@@ -239,6 +274,44 @@ public interface Codec<A> {
    */
   default <B> Codec<B> map(Function<A, B> to, Function<B, A> from) {
     return new MappedCodec<>(this, to, from);
+  }
+
+  /**
+   * Returns a new codec for a PostgreSQL <a
+   * href="https://www.postgresql.org/docs/current/domains.html">domain type</a> based on this
+   * codec. The returned codec uses the provided {@code schema} and {@code name} as its type
+   * identity but delegates all encoding and decoding to this codec. The OIDs default to {@code 0}
+   * (unknown), which is appropriate when the domain's OID is not statically known.
+   *
+   * <p>Example — defining a domain {@code CREATE DOMAIN positive_amount AS numeric CHECK (VALUE >
+   * 0)}:
+   *
+   * <pre>{@code
+   * Codec<BigDecimal> positiveAmount = Codec.NUMERIC.withType("", "positive_amount");
+   * }</pre>
+   *
+   * @param schema the PostgreSQL schema, or empty/null for the default search path
+   * @param name the PostgreSQL domain type name
+   * @return a new codec for the domain type
+   */
+  default Codec<A> withType(String schema, String name) {
+    return new DomainCodec<>(this, schema, name, 0, 0);
+  }
+
+  /**
+   * Returns a new codec for a PostgreSQL <a
+   * href="https://www.postgresql.org/docs/current/domains.html">domain type</a> based on this
+   * codec, with explicit OIDs. Use this overload when the domain's OIDs are known ahead of time
+   * (e.g. looked up from {@code pg_type}).
+   *
+   * @param schema the PostgreSQL schema, or empty/null for the default search path
+   * @param name the PostgreSQL domain type name
+   * @param scalarOid the PostgreSQL scalar OID for this domain type
+   * @param arrayOid the PostgreSQL array OID for this domain type
+   * @return a new codec for the domain type
+   */
+  default Codec<A> withType(String schema, String name, int scalarOid, int arrayOid) {
+    return new DomainCodec<>(this, schema, name, scalarOid, arrayOid);
   }
 
   // -----------------------------------------------------------------------

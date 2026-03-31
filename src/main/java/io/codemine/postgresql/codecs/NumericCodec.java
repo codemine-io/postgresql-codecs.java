@@ -30,12 +30,12 @@ final class NumericCodec implements Codec<BigDecimal> {
   }
 
   @Override
-  public void write(StringBuilder sb, BigDecimal value) {
+  public void encodeInText(StringBuilder sb, BigDecimal value) {
     sb.append(value.toPlainString());
   }
 
   @Override
-  public Codec.ParsingResult<BigDecimal> parse(CharSequence input, int offset)
+  public Codec.ParsingResult<BigDecimal> decodeInText(CharSequence input, int offset)
       throws Codec.DecodingException {
     String s = input.subSequence(offset, input.length()).toString().trim();
     try {

@@ -23,20 +23,12 @@ final class LsegCodec implements Codec<Lseg> {
   }
 
   @Override
-  public void write(StringBuilder sb, Lseg value) {
-    sb.append("[(");
-    sb.append(Double.toString(value.x1()));
-    sb.append(',');
-    sb.append(Double.toString(value.y1()));
-    sb.append("),(");
-    sb.append(Double.toString(value.x2()));
-    sb.append(',');
-    sb.append(Double.toString(value.y2()));
-    sb.append(")]");
+  public void encodeInText(StringBuilder sb, Lseg value) {
+    value.appendInTextTo(sb);
   }
 
   @Override
-  public Codec.ParsingResult<Lseg> parse(CharSequence input, int offset)
+  public Codec.ParsingResult<Lseg> decodeInText(CharSequence input, int offset)
       throws Codec.DecodingException {
     String s = input.subSequence(offset, input.length()).toString().trim();
     try {

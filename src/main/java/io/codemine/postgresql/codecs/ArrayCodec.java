@@ -55,36 +55,49 @@ final class ArrayCodec<A> implements Codec<List<A>> {
   // Textual wire format
   // -----------------------------------------------------------------------
   @Override
-  public void write(StringBuilder sb, List<A> value) {
+  public void encodeInText(StringBuilder sb, List<A> value) {
     sb.append("{");
     for (int i = 0; i < value.size(); i++) {
       if (i > 0) {
         sb.append(delimiter);
       }
-      StringBuilder elem = new StringBuilder();
-      elementCodec.write(elem, value.get(i));
-      int len = elem.length();
+      A elem = value.get(i);
+      if (elem == null) {
+        // PostgreSQL represents null array elements as the unquoted literal NULL.
+        sb.append("NULL");
+        continue;
+      }
+      StringBuilder elemSb = new StringBuilder();
+      elementCodec.encodeInText(elemSb, elem);
+      int len = elemSb.length();
       if (len == 0) {
         sb.append("\"\"");
         continue;
       }
       boolean needsQuoting = false;
-      for (int j = 0; j < len; j++) {
-        char c = elem.charAt(j);
-        if (c == delimiter
-            || c == '{'
-            || c == '}'
-            || c == '"'
-            || c == '\\'
-            || Character.isWhitespace(c)) {
-          needsQuoting = true;
-          break;
+      // A bare "NULL" (case-insensitive) would be interpreted as a null element by PostgreSQL.
+      // Quote it to preserve the literal string value.
+      if (len == 4 && "NULL".equalsIgnoreCase(elemSb.toString())) {
+        needsQuoting = true;
+      }
+      if (!needsQuoting) {
+        for (int j = 0; j < len; j++) {
+          char c = elemSb.charAt(j);
+          if (c == delimiter
+              || c == '{'
+              || c == '}'
+              || c == '"'
+              || c == '\\'
+              || Character.isWhitespace(c)) {
+            needsQuoting = true;
+            break;
+          }
         }
       }
       if (needsQuoting) {
         sb.append('"');
         for (int j = 0; j < len; j++) {
-          char c = elem.charAt(j);
+          char c = elemSb.charAt(j);
           if (c == '"' || c == '\\') {
             sb.append('\\');
           }
@@ -92,7 +105,7 @@ final class ArrayCodec<A> implements Codec<List<A>> {
         }
         sb.append('"');
       } else {
-        sb.append(elem);
+        sb.append(elemSb);
       }
     }
     sb.append("}");
@@ -103,7 +116,8 @@ final class ArrayCodec<A> implements Codec<List<A>> {
    * at {@code offset}. Handles double-quoted elements (with backslash escaping) and bare elements.
    */
   @Override
-  public ParsingResult<List<A>> parse(CharSequence input, int offset) throws DecodingException {
+  public ParsingResult<List<A>> decodeInText(CharSequence input, int offset)
+      throws DecodingException {
     if (offset >= input.length() || input.charAt(offset) != '{') {
       throw new DecodingException(input, offset, "Expected '{' to open array literal");
     }
@@ -138,7 +152,7 @@ final class ArrayCodec<A> implements Codec<List<A>> {
           throw new DecodingException(input, offset, "Unterminated quoted array element");
         }
         pos++; // skip closing '"'
-        list.add(elementCodec.parse(elem.toString(), 0).value);
+        list.add(elementCodec.decodeInText(elem.toString(), 0).value);
       } else {
         // Bare element: read until delimiter or '}'.
         int start = pos;
@@ -146,7 +160,12 @@ final class ArrayCodec<A> implements Codec<List<A>> {
           pos++;
         }
         String elemStr = input.subSequence(start, pos).toString();
-        list.add(elementCodec.parse(elemStr, 0).value);
+        // In PostgreSQL array literals, an unquoted NULL denotes a null element.
+        if ("NULL".equals(elemStr)) {
+          list.add(null);
+        } else {
+          list.add(elementCodec.decodeInText(elemStr, 0).value);
+        }
       }
 
       if (pos >= input.length()) {

@@ -23,18 +23,12 @@ final class CircleCodec implements Codec<Circle> {
   }
 
   @Override
-  public void write(StringBuilder sb, Circle value) {
-    sb.append("<(");
-    sb.append(Double.toString(value.x()));
-    sb.append(',');
-    sb.append(Double.toString(value.y()));
-    sb.append("),");
-    sb.append(Double.toString(value.r()));
-    sb.append('>');
+  public void encodeInText(StringBuilder sb, Circle value) {
+    value.appendInTextTo(sb);
   }
 
   @Override
-  public Codec.ParsingResult<Circle> parse(CharSequence input, int offset)
+  public Codec.ParsingResult<Circle> decodeInText(CharSequence input, int offset)
       throws Codec.DecodingException {
     String s = input.subSequence(offset, input.length()).toString().trim();
     try {

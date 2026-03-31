@@ -29,7 +29,7 @@ final class TimestamptzCodec implements Codec<Instant> {
   }
 
   @Override
-  public void write(StringBuilder sb, Instant value) {
+  public void encodeInText(StringBuilder sb, Instant value) {
     long unixMicros = value.getEpochSecond() * 1_000_000L + value.getNano() / 1_000L;
     long epochSecond = Math.floorDiv(unixMicros, 1_000_000L);
     LocalDateTime dt = LocalDateTime.ofEpochSecond(epochSecond, 0, ZoneOffset.UTC);
@@ -49,7 +49,7 @@ final class TimestamptzCodec implements Codec<Instant> {
   }
 
   @Override
-  public Codec.ParsingResult<Instant> parse(CharSequence input, int offset)
+  public Codec.ParsingResult<Instant> decodeInText(CharSequence input, int offset)
       throws Codec.DecodingException {
     String s = input.subSequence(offset, input.length()).toString().trim();
     try {

@@ -25,24 +25,12 @@ final class PolygonCodec implements Codec<Polygon> {
   }
 
   @Override
-  public void write(StringBuilder sb, Polygon value) {
-    sb.append('(');
-    for (int i = 0; i < value.points().size(); i++) {
-      if (i > 0) {
-        sb.append(',');
-      }
-      Point p = value.points().get(i);
-      sb.append('(');
-      sb.append(Double.toString(p.x()));
-      sb.append(',');
-      sb.append(Double.toString(p.y()));
-      sb.append(')');
-    }
-    sb.append(')');
+  public void encodeInText(StringBuilder sb, Polygon value) {
+    value.appendInTextTo(sb);
   }
 
   @Override
-  public Codec.ParsingResult<Polygon> parse(CharSequence input, int offset)
+  public Codec.ParsingResult<Polygon> decodeInText(CharSequence input, int offset)
       throws Codec.DecodingException {
     String s = input.subSequence(offset, input.length()).toString().trim();
     try {

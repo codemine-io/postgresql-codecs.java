@@ -24,12 +24,12 @@ final class VarcharCodec implements Codec<String> {
   }
 
   @Override
-  public void write(StringBuilder sb, String value) {
+  public void encodeInText(StringBuilder sb, String value) {
     sb.append(value);
   }
 
   @Override
-  public Codec.ParsingResult<String> parse(CharSequence input, int offset) {
+  public Codec.ParsingResult<String> decodeInText(CharSequence input, int offset) {
     return new Codec.ParsingResult<>(
         input.subSequence(offset, input.length()).toString(), input.length());
   }

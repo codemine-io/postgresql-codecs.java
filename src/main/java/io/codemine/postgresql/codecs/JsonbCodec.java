@@ -31,12 +31,12 @@ final class JsonbCodec implements Codec<JsonNode> {
   }
 
   @Override
-  public void write(StringBuilder sb, JsonNode value) {
+  public void encodeInText(StringBuilder sb, JsonNode value) {
     sb.append(value.toString());
   }
 
   @Override
-  public Codec.ParsingResult<JsonNode> parse(CharSequence input, int offset)
+  public Codec.ParsingResult<JsonNode> decodeInText(CharSequence input, int offset)
       throws Codec.DecodingException {
     String s = input.subSequence(offset, input.length()).toString();
     try {

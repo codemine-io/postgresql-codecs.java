@@ -23,12 +23,12 @@ final class Int2Codec implements Codec<Short> {
   }
 
   @Override
-  public void write(StringBuilder sb, Short value) {
+  public void encodeInText(StringBuilder sb, Short value) {
     sb.append(value);
   }
 
   @Override
-  public Codec.ParsingResult<Short> parse(CharSequence input, int offset)
+  public Codec.ParsingResult<Short> decodeInText(CharSequence input, int offset)
       throws Codec.DecodingException {
     try {
       short value = Short.parseShort(input.subSequence(offset, input.length()).toString().trim());

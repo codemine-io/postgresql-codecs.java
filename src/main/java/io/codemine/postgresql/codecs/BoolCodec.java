@@ -23,12 +23,12 @@ final class BoolCodec implements Codec<Boolean> {
   }
 
   @Override
-  public void write(StringBuilder sb, Boolean value) {
+  public void encodeInText(StringBuilder sb, Boolean value) {
     sb.append(value ? 't' : 'f');
   }
 
   @Override
-  public Codec.ParsingResult<Boolean> parse(CharSequence input, int offset)
+  public Codec.ParsingResult<Boolean> decodeInText(CharSequence input, int offset)
       throws Codec.DecodingException {
     String s = input.subSequence(offset, input.length()).toString().trim();
     return switch (s) {

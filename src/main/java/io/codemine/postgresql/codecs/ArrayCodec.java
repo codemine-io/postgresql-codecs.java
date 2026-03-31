@@ -147,7 +147,12 @@ final class ArrayCodec<A> implements Codec<List<A>> {
           pos++;
         }
         String elemStr = input.subSequence(start, pos).toString();
-        list.add(elementCodec.decodeInText(elemStr, 0).value);
+        // In PostgreSQL array literals, an unquoted NULL denotes a null element.
+        if ("NULL".equals(elemStr)) {
+          list.add(null);
+        } else {
+          list.add(elementCodec.decodeInText(elemStr, 0).value);
+        }
       }
 
       if (pos >= input.length()) {

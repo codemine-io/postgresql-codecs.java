@@ -45,59 +45,59 @@ Add the GitHub Packages repository to your `pom.xml`:
 
 ## Supported types
 
-| PostgreSQL type | Java Lib | Java type | Codec |
-|---|---|---|---|
-| `bool` | std | `Boolean` | `Codec.BOOL` |
-| `int2` | std | `Short` | `Codec.INT2` |
-| `int4` | std | `Integer` | `Codec.INT4` |
-| `int8` | std | `Long` | `Codec.INT8` |
-| `float4` | std | `Float` | `Codec.FLOAT4` |
-| `float8` | std | `Double` | `Codec.FLOAT8` |
-| `numeric` | std | `BigDecimal` | `Codec.NUMERIC` |
-| `text` | std | `String` | `Codec.TEXT` |
-| `varchar` | std | `String` | `Codec.VARCHAR` |
-| `bpchar` | std | `String` | `Codec.BPCHAR` |
-| `char` | std | `Byte` | `Codec.CHAR` |
-| `bytea` | postgresql-codecs | `Bytea` | `Codec.BYTEA` |
-| `uuid` | std | `UUID` | `Codec.UUID` |
-| `json` | jackson | `JsonNode` | `Codec.JSON` |
-| `jsonb` | jackson | `JsonNode` | `Codec.JSONB` |
-| `oid` | std | `Integer` | `Codec.OID` |
-| `money` | std | `Long` | `Codec.MONEY` |
-| `date` | std | `LocalDate` | `Codec.DATE` |
-| `time` | std | `LocalTime` | `Codec.TIME` |
-| `timetz` | postgresql-codecs | `Timetz` | `Codec.TIMETZ` |
-| `timestamp` | std | `LocalDateTime` | `Codec.TIMESTAMP` |
-| `timestamptz` | std | `Instant` | `Codec.TIMESTAMPTZ` |
-| `interval` | postgresql-codecs | `Interval` | `Codec.INTERVAL` |
-| `inet` | postgresql-codecs | `Inet` | `Codec.INET` |
-| `cidr` | postgresql-codecs | `Cidr` | `Codec.CIDR` |
-| `macaddr` | postgresql-codecs | `Macaddr` | `Codec.MACADDR` |
-| `macaddr8` | postgresql-codecs | `Macaddr8` | `Codec.MACADDR8` |
-| `point` | postgresql-codecs | `Point` | `Codec.POINT` |
-| `line` | postgresql-codecs | `Line` | `Codec.LINE` |
-| `lseg` | postgresql-codecs | `Lseg` | `Codec.LSEG` |
-| `box` | postgresql-codecs | `Box` | `Codec.BOX` |
-| `path` | postgresql-codecs | `Path` | `Codec.PATH` |
-| `polygon` | postgresql-codecs | `Polygon` | `Codec.POLYGON` |
-| `circle` | postgresql-codecs | `Circle` | `Codec.CIRCLE` |
-| `bit` | postgresql-codecs | `Bit` | `Codec.BIT` |
-| `varbit` | postgresql-codecs | `Bit` | `Codec.VARBIT` |
-| `citext` | std | `String` | `Codec.CITEXT` |
-| `tsvector` | postgresql-codecs | `Tsvector` | `Codec.TSVECTOR` |
-| `hstore` | postgresql-codecs | `Hstore` | `Codec.HSTORE` |
-| `int4range` | postgresql-codecs | `Range<Integer>` | `Codec.INT4RANGE` |
-| `int8range` | postgresql-codecs | `Range<Long>` | `Codec.INT8RANGE` |
-| `numrange` | postgresql-codecs | `Range<BigDecimal>` | `Codec.NUMRANGE` |
-| `tsrange` | postgresql-codecs | `Range<LocalDateTime>` | `Codec.TSRANGE` |
-| `tstzrange` | postgresql-codecs | `Range<Instant>` | `Codec.TSTZRANGE` |
-| `daterange` | postgresql-codecs | `Range<LocalDate>` | `Codec.DATERANGE` |
-| `int4multirange` | postgresql-codecs | `Multirange<Integer>` | `Codec.INT4MULTIRANGE` |
-| `int8multirange` | postgresql-codecs | `Multirange<Long>` | `Codec.INT8MULTIRANGE` |
-| `nummultirange` | postgresql-codecs | `Multirange<BigDecimal>` | `Codec.NUMMULTIRANGE` |
-| `tsmultirange` | postgresql-codecs | `Multirange<LocalDateTime>` | `Codec.TSMULTIRANGE` |
-| `tstzmultirange` | postgresql-codecs | `Multirange<Instant>` | `Codec.TSTZMULTIRANGE` |
-| `datemultirange` | postgresql-codecs | `Multirange<LocalDate>` | `Codec.DATEMULTIRANGE` |
+| PostgreSQL type | Java type | Codecs |
+|---|---|---|
+| `bool` | `Boolean` | `Codec.BOOL` |
+| `int2` | `Short` | `Codec.INT2` |
+| `int4` | `Integer` | `Codec.INT4` |
+| `int8` | `Long` | `Codec.INT8` |
+| `float4` | `Float` | `Codec.FLOAT4` |
+| `float8` | `Double` | `Codec.FLOAT8` |
+| `numeric` | `BigDecimal` | `Codec.NUMERIC` |
+| `text` | `String` | `Codec.TEXT` |
+| `varchar` | `String` | `Codec.VARCHAR`, `Codec.varchar(n)` |
+| `bpchar` | `String` | `Codec.BPCHAR`, `Codec.bpchar(n)` |
+| `"char"` | `Byte` | `Codec.CHAR` |
+| `bytea` | `Bytea` <sub><sup>(postgresql-codecs)</sup></sub> | `Codec.BYTEA` |
+| `uuid` | `UUID` | `Codec.UUID` |
+| `json` | `JsonNode` <sub><sup>(jackson)</sup></sub> | `Codec.JSON` |
+| `jsonb` | `JsonNode` <sub><sup>(jackson)</sup></sub> | `Codec.JSONB` |
+| `oid` | `Integer` | `Codec.OID` |
+| `money` | `Long` | `Codec.MONEY` |
+| `date` | `LocalDate` | `Codec.DATE` |
+| `time` | `LocalTime` | `Codec.TIME` |
+| `timetz` | `Timetz` <sub><sup>(postgresql-codecs)</sup></sub> | `Codec.TIMETZ` |
+| `timestamp` | `LocalDateTime` | `Codec.TIMESTAMP` |
+| `timestamptz` | `Instant` | `Codec.TIMESTAMPTZ` |
+| `interval` | `Interval` <sub><sup>(postgresql-codecs)</sup></sub> | `Codec.INTERVAL` |
+| `inet` | `Inet` <sub><sup>(postgresql-codecs)</sup></sub> | `Codec.INET` |
+| `cidr` | `Cidr` <sub><sup>(postgresql-codecs)</sup></sub> | `Codec.CIDR` |
+| `macaddr` | `Macaddr` <sub><sup>(postgresql-codecs)</sup></sub> | `Codec.MACADDR` |
+| `macaddr8` | `Macaddr8` <sub><sup>(postgresql-codecs)</sup></sub> | `Codec.MACADDR8` |
+| `point` | `Point` <sub><sup>(postgresql-codecs)</sup></sub> | `Codec.POINT` |
+| `line` | `Line` <sub><sup>(postgresql-codecs)</sup></sub> | `Codec.LINE` |
+| `lseg` | `Lseg` <sub><sup>(postgresql-codecs)</sup></sub> | `Codec.LSEG` |
+| `box` | `Box` <sub><sup>(postgresql-codecs)</sup></sub> | `Codec.BOX` |
+| `path` | `Path` <sub><sup>(postgresql-codecs)</sup></sub> | `Codec.PATH` |
+| `polygon` | `Polygon` <sub><sup>(postgresql-codecs)</sup></sub> | `Codec.POLYGON` |
+| `circle` | `Circle` <sub><sup>(postgresql-codecs)</sup></sub> | `Codec.CIRCLE` |
+| `bit` | `Bit` <sub><sup>(postgresql-codecs)</sup></sub> | `Codec.BIT`, `Codec.bit(n)` |
+| `varbit` | `Bit` <sub><sup>(postgresql-codecs)</sup></sub> | `Codec.VARBIT`, `Codec.varbit(n)` |
+| `citext` | `String` | `Codec.CITEXT` |
+| `tsvector` | `Tsvector` <sub><sup>(postgresql-codecs)</sup></sub> | `Codec.TSVECTOR` |
+| `hstore` | `Hstore` <sub><sup>(postgresql-codecs)</sup></sub> | `Codec.HSTORE` |
+| `int4range` | `Range<Integer>` <sub><sup>(postgresql-codecs)</sup></sub> | `Codec.INT4RANGE` |
+| `int8range` | `Range<Long>` <sub><sup>(postgresql-codecs)</sup></sub> | `Codec.INT8RANGE` |
+| `numrange` | `Range<BigDecimal>` <sub><sup>(postgresql-codecs)</sup></sub> | `Codec.NUMRANGE` |
+| `tsrange` | `Range<LocalDateTime>` <sub><sup>(postgresql-codecs)</sup></sub> | `Codec.TSRANGE` |
+| `tstzrange` | `Range<Instant>` <sub><sup>(postgresql-codecs)</sup></sub> | `Codec.TSTZRANGE` |
+| `daterange` | `Range<LocalDate>` <sub><sup>(postgresql-codecs)</sup></sub> | `Codec.DATERANGE` |
+| `int4multirange` | `Multirange<Integer>` <sub><sup>(postgresql-codecs)</sup></sub> | `Codec.INT4MULTIRANGE` |
+| `int8multirange` | `Multirange<Long>` <sub><sup>(postgresql-codecs)</sup></sub> | `Codec.INT8MULTIRANGE` |
+| `nummultirange` | `Multirange<BigDecimal>` <sub><sup>(postgresql-codecs)</sup></sub> | `Codec.NUMMULTIRANGE` |
+| `tsmultirange` | `Multirange<LocalDateTime>` <sub><sup>(postgresql-codecs)</sup></sub> | `Codec.TSMULTIRANGE` |
+| `tstzmultirange` | `Multirange<Instant>` <sub><sup>(postgresql-codecs)</sup></sub> | `Codec.TSTZMULTIRANGE` |
+| `datemultirange` | `Multirange<LocalDate>` <sub><sup>(postgresql-codecs)</sup></sub> | `Codec.DATEMULTIRANGE` |
 
 Any scalar codec can be promoted to array codec of any dimensionality. E.g.:
 

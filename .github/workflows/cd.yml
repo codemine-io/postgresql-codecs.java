@@ -4,27 +4,34 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Semver version to publish (e.g., 1.0.0)
-        required: true
+        description: Exact semver version to publish (e.g., 1.2.3). Mutually exclusive with bump.
+        required: false
         type: string
+      bump:
+        description: Version bump level (mutually exclusive with version).
+        required: false
+        type: choice
+        default: ''
+        options:
+          - ''
+          - patch
+          - minor
+          - major
+
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
   publish:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      packages: write
 
     steps:
-      - name: Validate SemVer version format
-        run: |
-          if ! echo "${{ inputs.version }}" | grep -qE '^[0-9]+(\.[0-9]+)+$'
-          then
-            echo "Error: '${{ inputs.version }}' is not a valid SemVer version (expected e.g. 1.2.3)"
-            exit 1
-          fi
-
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Set up JDK 21
         uses: actions/setup-java@v5
@@ -32,44 +39,81 @@ jobs:
           java-version: '21'
           distribution: temurin
           cache: maven
-          server-id: github
-          server-username: GITHUB_ACTOR
-          server-password: GITHUB_TOKEN
+          server-id: central
+          server-username: CENTRAL_USERNAME
+          server-password: CENTRAL_TOKEN
+          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+          gpg-passphrase: GPG_PASSPHRASE
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ -n "${{ inputs.version }}" ] && [ -n "${{ inputs.bump }}" ]; then
+            echo "Error: provide either 'version' or 'bump', not both."
+            exit 1
+          fi
+
+          if [ -n "${{ inputs.version }}" ]; then
+            VERSION="${{ inputs.version }}"
+          elif [ -n "${{ inputs.bump }}" ]; then
+            CURRENT=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout | sed 's/-SNAPSHOT//')
+            IFS='.' read -ra parts <<< "$CURRENT"
+            # Ensure three components
+            while [ ${#parts[@]} -lt 3 ]; do parts+=("0"); done
+            case "${{ inputs.bump }}" in
+              major) parts[0]=$((parts[0] + 1)); parts[1]=0; parts[2]=0 ;;
+              minor) parts[1]=$((parts[1] + 1)); parts[2]=0 ;;
+              patch) parts[2]=$((parts[2] + 1)) ;;
+            esac
+            VERSION="${parts[0]}.${parts[1]}.${parts[2]}"
+          else
+            echo "Error: provide either 'version' or 'bump'."
+            exit 1
+          fi
+
+          if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Error: '$VERSION' is not a valid semver version (expected e.g. 1.2.3)"
+            exit 1
+          fi
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Set version
-        run: mvn versions:set -DnewVersion=${{ inputs.version }} -DgenerateBackupPoms=false
+        run: mvn versions:set -DnewVersion=${{ steps.version.outputs.version }} -DgenerateBackupPoms=false
+
+      - name: Publish to Maven Central
+        run: mvn --batch-mode deploy -Prelease -DskipTests
+        env:
+          CENTRAL_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
+          CENTRAL_TOKEN: ${{ secrets.CENTRAL_TOKEN }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
 
       - name: Generate documentation site
         run: mvn site -DskipTests
 
-      - name: Deploy documentation to /v${{ inputs.version }}
+      - name: Deploy documentation to /v${{ steps.version.outputs.version }}
         uses: ./.github/actions/deploy-docs
         with:
-          subdirectory: v${{ inputs.version }}
+          subdirectory: v${{ steps.version.outputs.version }}
           token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Publish to GitHub Packages
-        run: mvn --batch-mode deploy -DskipTests
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Commit the version update
         id: commit
         uses: stefanzweifel/git-auto-commit-action@v7
         with:
-          commit_message: Set package version to ${{ inputs.version }}
+          commit_message: Set package version to ${{ steps.version.outputs.version }}
           file_pattern: pom.xml
 
       - name: Determine documentation URL
         id: docs-url
         run: |
           PAGES_URL="https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}"
-          echo "url=${PAGES_URL}/v${{ inputs.version }}/" >> "$GITHUB_OUTPUT"
+          echo "url=${PAGES_URL}/v${{ steps.version.outputs.version }}/" >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub release
         run: |
-          gh release create "v${{ inputs.version }}" \
-            --title "v${{ inputs.version }}" \
+          gh release create "v${{ steps.version.outputs.version }}" \
+            --title "v${{ steps.version.outputs.version }}" \
             --notes "📖 [Documentation](${{ steps.docs-url.outputs.url }})" \
             --target ${{ steps.commit.outputs.commit_hash }}
         env:

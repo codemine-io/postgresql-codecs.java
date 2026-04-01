@@ -71,18 +71,9 @@ jobs:
           MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
 
-      - name: Generate documentation site
-        run: mvn site -DskipTests
-
-      - name: Deploy documentation to /v${{ inputs.version }}
-        uses: ./.github/actions/deploy-docs
-        with:
-          subdirectory: v${{ inputs.version }}
-          token: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Commit the version update
         id: commit
-        uses: stefanzweifel/git-auto-commit-action@v5
+        uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: Set package version to ${{ inputs.version }}
           file_pattern: pom.xml

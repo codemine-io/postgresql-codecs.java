@@ -249,7 +249,7 @@ public final class CompositeCodec<Z> implements Codec<Z> {
   /**
    * Creates a composite codec for any number of fields using an untyped vararg array constructor.
    *
-   * <p>This constructor is intended for composite types with more than 14 fields, or whenever the
+   * <p>This constructor is intended for composite types with more than 7 fields, or whenever the
    * fully-typed curried constructors are impractical. The {@code construct} function receives an
    * {@code Object[]} whose elements correspond positionally to the supplied field descriptors.
    *

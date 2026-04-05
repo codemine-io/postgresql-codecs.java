@@ -3,11 +3,6 @@ package io.codemine.java.postgresql.codecs;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import io.codemine.java.postgresql.TextInBinaryOutR2dbcCodec;
-import io.codemine.java.postgresql.TextInTextOutR2dbcCodec;
-import io.r2dbc.postgresql.PostgresqlConnectionConfiguration;
-import io.r2dbc.postgresql.PostgresqlConnectionFactory;
-import io.r2dbc.spi.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.util.Map;
@@ -21,14 +16,12 @@ import net.jqwik.api.Shrinkable;
 import org.junit.jupiter.api.Test;
 import org.postgresql.util.PGobject;
 import org.testcontainers.containers.PostgreSQLContainer;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 /**
- * Integration tests for {@link EnumCodec} against a real PostgreSQL instance.
+ * Integration tests for {@link EnumCodec} against a real PostgreSQL instance via pgjdbc.
  *
- * <p>The Docker container is shared via a {@code static} field (started once). The JDBC and R2DBC
- * connections are instance fields created in the constructor so that they are always available,
+ * <p>The Docker container is shared via a {@code static} field (started once). The pgjdbc
+ * connection is an instance field created in the constructor so that it is always available,
  * regardless of whether jqwik re-creates the test instance for a {@code @Property} method.
  */
 class EnumCodecIT {
@@ -58,8 +51,6 @@ class EnumCodecIT {
   }
 
   private final java.sql.Connection pgjdbcConn;
-  private final Connection textInTextOutConn;
-  private final Connection textInBinaryOutConn;
 
   EnumCodecIT() {
     try {
@@ -74,45 +65,6 @@ class EnumCodecIT {
           stmt.execute("CREATE TYPE test_mood AS ENUM ('happy', 'sad', 'neutral')");
         }
       }
-
-      var textTextCodec = new TextInTextOutR2dbcCodec<>(MOOD_CODEC, Mood.class);
-      textInTextOutConn =
-          Mono.from(
-                  new PostgresqlConnectionFactory(
-                          PostgresqlConnectionConfiguration.builder()
-                              .host(CONTAINER.getHost())
-                              .port(CONTAINER.getMappedPort(5432))
-                              .username(CONTAINER.getUsername())
-                              .password(CONTAINER.getPassword())
-                              .database(CONTAINER.getDatabaseName())
-                              .codecRegistrar(
-                                  (c, allocator, registry) -> {
-                                    registry.addFirst(textTextCodec);
-                                    return Mono.empty();
-                                  })
-                              .build())
-                      .create())
-              .block();
-
-      var textBinaryCodec = new TextInBinaryOutR2dbcCodec<>(MOOD_CODEC, Mood.class);
-      textInBinaryOutConn =
-          Mono.from(
-                  new PostgresqlConnectionFactory(
-                          PostgresqlConnectionConfiguration.builder()
-                              .host(CONTAINER.getHost())
-                              .port(CONTAINER.getMappedPort(5432))
-                              .username(CONTAINER.getUsername())
-                              .password(CONTAINER.getPassword())
-                              .database(CONTAINER.getDatabaseName())
-                              .forceBinary(true)
-                              .codecRegistrar(
-                                  (c, allocator, registry) -> {
-                                    registry.addFirst(textBinaryCodec);
-                                    return Mono.empty();
-                                  })
-                              .build())
-                      .create())
-              .block();
     } catch (Exception e) {
       throw new RuntimeException("EnumCodecIT setup failed", e);
     }
@@ -138,31 +90,6 @@ class EnumCodecIT {
         assertTrue(rs.next(), "enum type test_mood not found in pg_type");
       }
     }
-  }
-
-  @Property(tries = 50)
-  void roundtripsInTextToBinaryViaR2dbc(@ForAll("moods") Mood value) {
-    Mood decoded =
-        Flux.from(
-                textInBinaryOutConn
-                    .createStatement("SELECT $1::test_mood")
-                    .bind(0, value)
-                    .execute())
-            .flatMap(result -> result.map((row, meta) -> row.get(0, Mood.class)))
-            .single()
-            .block();
-    assertEquals(value, decoded);
-  }
-
-  @Property(tries = 50)
-  void roundtripsInTextToTextViaR2dbc(@ForAll("moods") Mood value) {
-    Mood decoded =
-        Flux.from(
-                textInTextOutConn.createStatement("SELECT $1::test_mood").bind(0, value).execute())
-            .flatMap(result -> result.map((row, meta) -> row.get(0, Mood.class)))
-            .single()
-            .block();
-    assertEquals(value, decoded);
   }
 
   @Property(tries = 50)

@@ -70,6 +70,11 @@ final class ArrayCodec<A> implements Codec<List<A>> {
       StringBuilder elemSb = new StringBuilder();
       elementCodec.encodeInText(elemSb, elem);
       int len = elemSb.length();
+      if (elementCodec instanceof ArrayCodec) {
+        // Sub-array literals ({...}) are always written bare — never quoted.
+        sb.append(elemSb);
+        continue;
+      }
       if (len == 0) {
         sb.append("\"\"");
         continue;
@@ -132,7 +137,13 @@ final class ArrayCodec<A> implements Codec<List<A>> {
     while (pos < input.length()) {
       char c = input.charAt(pos);
 
-      if (c == '"') {
+      if (c == '{') {
+        // Sub-array element: delegate directly to the element codec which will consume the
+        // complete {..} block and return the next unparsed offset.
+        ParsingResult<A> result = elementCodec.decodeInText(input, pos);
+        list.add(result.value);
+        pos = result.nextOffset;
+      } else if (c == '"') {
         // Quoted element: collect raw chars between double-quotes, honouring backslash escapes.
         pos++; // skip opening '"'
         StringBuilder elem = new StringBuilder();
@@ -190,40 +201,67 @@ final class ArrayCodec<A> implements Codec<List<A>> {
   // Binary wire format
   // -----------------------------------------------------------------------
   /**
-   * Encodes a 1-D array in PostgreSQL binary array format.
+   * Encodes an N-dimensional array in PostgreSQL binary array format.
    *
    * <pre>
-   *   int32  ndim        = 1
+   *   int32  ndim
    *   int32  flags       = 0
    *   int32  element_oid
-   *   int32  dim_size
-   *   int32  dim_lbound  = 1
-   *   for each element:
+   *   [int32 dim_size, int32 dim_lbound=1] * ndim
+   *   for each leaf element (row-major, flat):
    *     int32  elem_length  (-1 for NULL)
    *     byte[] elem_data
    * </pre>
    */
   @Override
   public void encodeInBinary(List<A> value, ByteArrayOutputStream out) {
-    writeInt32(out, dimensions()); // ndim
+    int ndim = dimensions();
+    writeInt32(out, ndim);
     writeInt32(out, 0); // flags
-    writeInt32(out, elementCodec.scalarOid()); // element OID
-    writeInt32(out, value.size()); // dimension size
-    writeInt32(out, 1); // lower bound (PostgreSQL convention: 1-based)
-    for (A elem : value) {
-      if (elem == null) {
-        writeInt32(out, -1);
-      } else {
-        ByteArrayOutputStream elemOut = new ByteArrayOutputStream();
-        elementCodec.encodeInBinary(elem, elemOut);
-        byte[] bytes = elemOut.toByteArray();
-        writeInt32(out, bytes.length);
-        out.writeBytes(bytes);
+    writeInt32(out, elementCodec.scalarOid()); // scalar element OID
+    int[] dimSizes = new int[ndim];
+    collectDimSizes(value, dimSizes, 0);
+    for (int size : dimSizes) {
+      writeInt32(out, size);
+      writeInt32(out, 1); // lower bound (PostgreSQL convention: 1-based)
+    }
+    encodeElementsFlat(value, out);
+  }
+
+  private void collectDimSizes(List<?> list, int[] dimSizes, int depth) {
+    dimSizes[depth] = list.size();
+    if (depth + 1 < dimSizes.length && !list.isEmpty()) {
+      for (Object elem : list) {
+        if (elem != null) {
+          collectDimSizes((List<?>) elem, dimSizes, depth + 1);
+          return;
+        }
       }
     }
   }
 
-  /** Decodes a PostgreSQL binary array. */
+  @SuppressWarnings("unchecked")
+  private void encodeElementsFlat(List<A> list, ByteArrayOutputStream out) {
+    if (elementCodec instanceof ArrayCodec<?> inner) {
+      for (A elem : list) {
+        ((ArrayCodec<Object>) inner).encodeElementsFlat((List<Object>) elem, out);
+      }
+    } else {
+      for (A elem : list) {
+        if (elem == null) {
+          writeInt32(out, -1);
+        } else {
+          ByteArrayOutputStream elemOut = new ByteArrayOutputStream();
+          elementCodec.encodeInBinary(elem, elemOut);
+          byte[] bytes = elemOut.toByteArray();
+          writeInt32(out, bytes.length);
+          out.writeBytes(bytes);
+        }
+      }
+    }
+  }
+
+  /** Decodes a PostgreSQL binary N-dimensional array. */
   @Override
   public List<A> decodeInBinary(ByteBuffer buf, int length) throws DecodingException {
     int ndim = buf.getInt();
@@ -249,18 +287,37 @@ final class ArrayCodec<A> implements Codec<List<A>> {
           "Expected " + dimensions() + "-dimensional array in binary decode, got " + ndim);
     }
 
-    int dimSize = buf.getInt();
-    buf.getInt(); // lower bound (ignored)
-    List<A> result = new ArrayList<>(dimSize);
-    for (int i = 0; i < dimSize; i++) {
-      int elemLen = buf.getInt();
-      if (elemLen == -1) {
-        result.add(null);
-      } else {
-        result.add(elementCodec.decodeInBinary(buf, elemLen));
-      }
+    int[] dimSizes = new int[ndim];
+    for (int i = 0; i < ndim; i++) {
+      dimSizes[i] = buf.getInt();
+      buf.getInt(); // lower bound (ignored)
     }
 
+    return decodeNestedList(buf, dimSizes, 0);
+  }
+
+  @SuppressWarnings("unchecked")
+  private List<A> decodeNestedList(ByteBuffer buf, int[] dimSizes, int depth)
+      throws DecodingException {
+    int size = dimSizes[depth];
+    List<A> result = new ArrayList<>(size);
+    if (depth == dimSizes.length - 1) {
+      // Leaf level: decode scalar elements using this codec's element codec.
+      for (int i = 0; i < size; i++) {
+        int elemLen = buf.getInt();
+        if (elemLen == -1) {
+          result.add(null);
+        } else {
+          result.add(elementCodec.decodeInBinary(buf, elemLen));
+        }
+      }
+    } else {
+      // Non-leaf: recurse into the next dimension via the element codec.
+      ArrayCodec<?> inner = (ArrayCodec<?>) elementCodec;
+      for (int i = 0; i < size; i++) {
+        result.add((A) inner.decodeNestedList(buf, dimSizes, depth + 1));
+      }
+    }
     return result;
   }
 
@@ -276,6 +333,12 @@ final class ArrayCodec<A> implements Codec<List<A>> {
     // multi-dimensional arrays: all sub-arrays at the same level must have the same length to
     // satisfy PostgreSQL's rectangular-array constraint.
     int innerSize = size == 0 ? 0 : r.nextInt(size + 1);
+    // PostgreSQL normalises any array with 0 total elements to an ndim=0 empty array {}.
+    // A value like [[], [], ...] (non-empty outer, empty inner) cannot survive a round-trip.
+    // Collapse to a fully-empty outer list so we only ever generate round-trip-safe values.
+    if (innerSize == 0 && elementCodec instanceof ArrayCodec) {
+      size = 0;
+    }
     List<A> list = new ArrayList<>(size);
     for (int i = 0; i < size; i++) {
       list.add(elementCodec.random(r, innerSize));

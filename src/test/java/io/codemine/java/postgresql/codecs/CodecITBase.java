@@ -49,18 +49,30 @@ abstract class CodecITBase<A> {
     final Connection textInTextOutConn;
     final Connection textInBinaryOutConn;
     final Connection binaryInTextOutConn;
+    final Connection arrayArrayBinaryInBinaryOutConn;
+    final Connection arrayArrayTextInTextOutConn;
+    final Connection arrayArrayTextInBinaryOutConn;
+    final Connection arrayArrayBinaryInTextOutConn;
 
     SharedConnections(
         java.sql.Connection pgjdbcConnection,
         Connection binaryInBinaryOutConn,
         Connection textInTextOutConn,
         Connection textInBinaryOutConn,
-        Connection binaryInTextOutConn) {
+        Connection binaryInTextOutConn,
+        Connection arrayArrayBinaryInBinaryOutConn,
+        Connection arrayArrayTextInTextOutConn,
+        Connection arrayArrayTextInBinaryOutConn,
+        Connection arrayArrayBinaryInTextOutConn) {
       this.pgjdbcConnection = pgjdbcConnection;
       this.binaryInBinaryOutConn = binaryInBinaryOutConn;
       this.textInTextOutConn = textInTextOutConn;
       this.textInBinaryOutConn = textInBinaryOutConn;
       this.binaryInTextOutConn = binaryInTextOutConn;
+      this.arrayArrayBinaryInBinaryOutConn = arrayArrayBinaryInBinaryOutConn;
+      this.arrayArrayTextInTextOutConn = arrayArrayTextInTextOutConn;
+      this.arrayArrayTextInBinaryOutConn = arrayArrayTextInBinaryOutConn;
+      this.arrayArrayBinaryInTextOutConn = arrayArrayBinaryInTextOutConn;
     }
 
     void close() throws Exception {
@@ -69,6 +81,10 @@ abstract class CodecITBase<A> {
           .then(Mono.from(textInTextOutConn.close()))
           .then(Mono.from(textInBinaryOutConn.close()))
           .then(Mono.from(binaryInTextOutConn.close()))
+          .then(Mono.from(arrayArrayBinaryInBinaryOutConn.close()))
+          .then(Mono.from(arrayArrayTextInTextOutConn.close()))
+          .then(Mono.from(arrayArrayTextInBinaryOutConn.close()))
+          .then(Mono.from(arrayArrayBinaryInTextOutConn.close()))
           .block();
     }
   }
@@ -84,6 +100,7 @@ abstract class CodecITBase<A> {
   private final Class<A> type;
 
   private final Codec<List<A>> arrayCodec;
+  private final Codec<List<List<A>>> arrayArrayCodec;
 
   /** JDBC connection (pgjdbc) used for text-protocol baseline tests. */
   private final java.sql.Connection pgjdbcConnection;
@@ -114,11 +131,19 @@ abstract class CodecITBase<A> {
    */
   private final Connection binaryInTextOutConn;
 
+  /** Dedicated R2DBC connections for nested array roundtrips. */
+  private final Connection arrayArrayBinaryInBinaryOutConn;
+
+  private final Connection arrayArrayTextInTextOutConn;
+  private final Connection arrayArrayTextInBinaryOutConn;
+  private final Connection arrayArrayBinaryInTextOutConn;
+
   @SuppressWarnings("unchecked")
   protected CodecITBase(Codec<A> codec, Class<A> type) {
     this.codec = codec;
     this.type = type;
     this.arrayCodec = codec.inDim();
+    this.arrayArrayCodec = arrayCodec.inDim();
 
     // Retrieve or create shared connections for this concrete subclass.
     // computeIfAbsent ensures that even when jqwik instantiates the class
@@ -133,6 +158,10 @@ abstract class CodecITBase<A> {
     textInTextOutConn = conns.textInTextOutConn;
     textInBinaryOutConn = conns.textInBinaryOutConn;
     binaryInTextOutConn = conns.binaryInTextOutConn;
+    arrayArrayBinaryInBinaryOutConn = conns.arrayArrayBinaryInBinaryOutConn;
+    arrayArrayTextInTextOutConn = conns.arrayArrayTextInTextOutConn;
+    arrayArrayTextInBinaryOutConn = conns.arrayArrayTextInBinaryOutConn;
+    arrayArrayBinaryInTextOutConn = conns.arrayArrayBinaryInTextOutConn;
   }
 
   @SuppressWarnings("unchecked")
@@ -153,6 +182,9 @@ abstract class CodecITBase<A> {
 
     Class<List<A>> listClass = (Class<List<A>>) (Class<?>) List.class;
     Codec<List<A>> arrayCd = codec.inDim();
+    @SuppressWarnings("unchecked")
+    Class<List<List<A>>> listListClass = (Class<List<List<A>>>) (Class<?>) List.class;
+    Codec<List<List<A>>> arrayArrayCd = arrayCd.inDim();
 
     // Each connection handles both the scalar and array codec.
     return new SharedConnections(
@@ -172,7 +204,11 @@ abstract class CodecITBase<A> {
         r2dbcConnect(
             false,
             new BinaryInTextOutR2dbcCodec<>(codec, type),
-            new BinaryInTextOutR2dbcCodec<>(arrayCd, listClass)));
+            new BinaryInTextOutR2dbcCodec<>(arrayCd, listClass)),
+        r2dbcConnect(true, new BinaryInBinaryOutR2dbcCodec<>(arrayArrayCd, listListClass)),
+        r2dbcConnect(false, new TextInTextOutR2dbcCodec<>(arrayArrayCd, listListClass)),
+        r2dbcConnect(true, new TextInBinaryOutR2dbcCodec<>(arrayArrayCd, listListClass)),
+        r2dbcConnect(false, new BinaryInTextOutR2dbcCodec<>(arrayArrayCd, listListClass)));
   }
 
   @AfterAll
@@ -229,6 +265,19 @@ abstract class CodecITBase<A> {
             .block();
   }
 
+  @SuppressWarnings("unchecked")
+  private List<List<A>> roundtripArrayArrayViaR2dbc(Connection r2conn, List<List<A>> value) {
+    return (List<List<A>>)
+        Flux.from(
+                r2conn
+                    .createStatement("SELECT $1::" + arrayArrayCodec.typeSig())
+                    .bind(0, value)
+                    .execute())
+            .flatMap(result -> result.map((row, meta) -> row.get(0, List.class)))
+            .single()
+            .block();
+  }
+
   @Provide
   Arbitrary<A> values() {
     return net.jqwik.api.Arbitraries.fromGeneratorWithSize(
@@ -239,6 +288,12 @@ abstract class CodecITBase<A> {
   Arbitrary<List<A>> arrayValues() {
     return net.jqwik.api.Arbitraries.fromGeneratorWithSize(
         size -> r -> net.jqwik.api.Shrinkable.unshrinkable(arrayCodec.random(r, size)));
+  }
+
+  @Provide
+  Arbitrary<List<List<A>>> arrayArrayValues() {
+    return net.jqwik.api.Arbitraries.fromGeneratorWithSize(
+        size -> r -> net.jqwik.api.Shrinkable.unshrinkable(arrayArrayCodec.random(r, size)));
   }
 
   // -----------------------------------------------------------------------
@@ -392,6 +447,67 @@ abstract class CodecITBase<A> {
     }
   }
 
+  @Property(tries = 100)
+  void arrayArrayRoundtripsInBinaryToBinaryViaR2dbc(@ForAll("arrayArrayValues") List<List<A>> value)
+      throws Exception {
+    List<List<A>> decoded = roundtripArrayArrayViaR2dbc(arrayArrayBinaryInBinaryOutConn, value);
+    assertEquals(
+        value, decoded, "decode mismatch for " + arrayArrayCodec.typeSig() + " value=" + value);
+  }
+
+  @Property(tries = 100)
+  void arrayArrayRoundtripsInTextToTextViaR2dbc(@ForAll("arrayArrayValues") List<List<A>> value)
+      throws Exception {
+    List<List<A>> decoded = roundtripArrayArrayViaR2dbc(arrayArrayTextInTextOutConn, value);
+    assertEquals(
+        value, decoded, "decode mismatch for " + arrayArrayCodec.typeSig() + " value=" + value);
+  }
+
+  @Property(tries = 100)
+  void arrayArrayRoundtripsInTextToBinaryViaR2dbc(@ForAll("arrayArrayValues") List<List<A>> value)
+      throws Exception {
+    List<List<A>> decoded = roundtripArrayArrayViaR2dbc(arrayArrayTextInBinaryOutConn, value);
+    assertEquals(
+        value, decoded, "decode mismatch for " + arrayArrayCodec.typeSig() + " value=" + value);
+  }
+
+  @Property(tries = 100)
+  void arrayArrayRoundtripsInBinaryToTextViaR2dbc(@ForAll("arrayArrayValues") List<List<A>> value)
+      throws Exception {
+    List<List<A>> decoded = roundtripArrayArrayViaR2dbc(arrayArrayBinaryInTextOutConn, value);
+    assertEquals(
+        value, decoded, "decode mismatch for " + arrayArrayCodec.typeSig() + " value=" + value);
+  }
+
+  @Property(tries = 100)
+  void arrayArrayRoundtripsInTextToTextViaPgjdbc(@ForAll("arrayArrayValues") List<List<A>> value)
+      throws Exception {
+    try (var ps = pgjdbcConnection.prepareStatement("SELECT ?::" + arrayArrayCodec.typeSig())) {
+      if (value != null) {
+        PGobject obj = new PGobject();
+        obj.setType(pgjdbcCodecName(arrayArrayCodec));
+        obj.setValue(arrayArrayCodec.encodeInTextToString(value));
+        ps.setObject(1, obj);
+      } else {
+        ps.setNull(1, java.sql.Types.OTHER);
+      }
+
+      List<List<A>> decoded;
+      try (ResultSet rs = ps.executeQuery()) {
+        assertTrue(rs.next(), "Expected a result row");
+        String text = rs.getString(1);
+        if (text == null) {
+          decoded = null;
+        } else {
+          decoded = arrayArrayCodec.decodeInText(text, 0).value;
+        }
+      }
+
+      assertEquals(
+          value, decoded, "decode mismatch for " + arrayArrayCodec.typeSig() + " value=" + value);
+    }
+  }
+
   private static String qualifiedCodecName(Codec codec) {
     StringBuilder sb = new StringBuilder();
     if (codec.schema() != null && !codec.schema().isEmpty()) {
@@ -401,6 +517,18 @@ abstract class CodecITBase<A> {
     for (int i = 0; i < codec.dimensions(); i++) {
       sb.append("[]");
     }
+    return sb.toString();
+  }
+
+  private static String pgjdbcCodecName(Codec codec) {
+    StringBuilder sb = new StringBuilder();
+    if (codec.dimensions() > 0) {
+      sb.append("_");
+    }
+    if (codec.schema() != null && !codec.schema().isEmpty()) {
+      sb.append(codec.schema()).append(".");
+    }
+    sb.append(codec.name());
     return sb.toString();
   }
 }

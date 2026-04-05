@@ -3,6 +3,8 @@ package io.codemine.java.postgresql.codecs;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import io.codemine.java.postgresql.BinaryInBinaryOutR2dbcCodec;
 import io.codemine.java.postgresql.BinaryInTextOutR2dbcCodec;
 import io.codemine.java.postgresql.TextInBinaryOutR2dbcCodec;
@@ -10,16 +12,13 @@ import io.codemine.java.postgresql.TextInTextOutR2dbcCodec;
 import io.r2dbc.postgresql.PostgresqlConnectionConfiguration;
 import io.r2dbc.postgresql.PostgresqlConnectionFactory;
 import io.r2dbc.spi.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import net.jqwik.api.Arbitrary;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
 import net.jqwik.api.Provide;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.postgresql.util.PGobject;
@@ -30,12 +29,48 @@ import reactor.core.publisher.Mono;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 abstract class CodecITBase<A> {
 
+  /**
+   * Cache of shared R2DBC connections keyed by concrete test class. Declared before the static
+   * initialiser so that the JVM shutdown hook registered there can reference it without an illegal
+   * forward-reference compiler error.
+   */
+  private static final ConcurrentHashMap<Class<?>, SharedConnections> sharedConnectionsByClass =
+      new ConcurrentHashMap<>();
+
   static final PostgreSQLContainer<?> container;
+  static final HikariDataSource jdbcPool;
 
   static {
     container =
-        new PostgreSQLContainer<>("postgres:18").withCommand("postgres -c max_connections=300");
+        new PostgreSQLContainer<>("postgres:18").withCommand("postgres -c max_connections=500");
     container.start();
+
+    var hikariConfig = new HikariConfig();
+    hikariConfig.setJdbcUrl(container.getJdbcUrl());
+    hikariConfig.setUsername(container.getUsername());
+    hikariConfig.setPassword(container.getPassword());
+    // Disable server-side prepared-statement caching so that all result
+    // columns remain in text format (avoids rs.getString() returning
+    // "[B@…" for bytea columns after the binary-mode switch threshold).
+    hikariConfig.addDataSourceProperty("prepareThreshold", "0");
+    hikariConfig.setMaximumPoolSize(10);
+    jdbcPool = new HikariDataSource(hikariConfig);
+
+    Runtime.getRuntime()
+        .addShutdownHook(
+            new Thread(
+                () -> {
+                  sharedConnectionsByClass
+                      .values()
+                      .forEach(
+                          conns -> {
+                            try {
+                              conns.close();
+                            } catch (Exception ignored) {
+                            }
+                          });
+                  jdbcPool.close();
+                }));
   }
 
   /**
@@ -44,7 +79,6 @@ abstract class CodecITBase<A> {
    * not open fresh connections on each instantiation.
    */
   private static class SharedConnections {
-    final java.sql.Connection pgjdbcConnection;
     final Connection binaryInBinaryOutConn;
     final Connection textInTextOutConn;
     final Connection textInBinaryOutConn;
@@ -55,7 +89,6 @@ abstract class CodecITBase<A> {
     final Connection arrayArrayBinaryInTextOutConn;
 
     SharedConnections(
-        java.sql.Connection pgjdbcConnection,
         Connection binaryInBinaryOutConn,
         Connection textInTextOutConn,
         Connection textInBinaryOutConn,
@@ -64,7 +97,6 @@ abstract class CodecITBase<A> {
         Connection arrayArrayTextInTextOutConn,
         Connection arrayArrayTextInBinaryOutConn,
         Connection arrayArrayBinaryInTextOutConn) {
-      this.pgjdbcConnection = pgjdbcConnection;
       this.binaryInBinaryOutConn = binaryInBinaryOutConn;
       this.textInTextOutConn = textInTextOutConn;
       this.textInBinaryOutConn = textInBinaryOutConn;
@@ -75,8 +107,7 @@ abstract class CodecITBase<A> {
       this.arrayArrayBinaryInTextOutConn = arrayArrayBinaryInTextOutConn;
     }
 
-    void close() throws Exception {
-      pgjdbcConnection.close();
+    void close() {
       Mono.from(binaryInBinaryOutConn.close())
           .then(Mono.from(textInTextOutConn.close()))
           .then(Mono.from(textInBinaryOutConn.close()))
@@ -89,21 +120,11 @@ abstract class CodecITBase<A> {
     }
   }
 
-  /**
-   * Cache of shared connections keyed by concrete test class. Ensures that connections are opened
-   * exactly once per subclass regardless of how many instances the test engines create.
-   */
-  private static final ConcurrentHashMap<Class<?>, SharedConnections> sharedConnectionsByClass =
-      new ConcurrentHashMap<>();
-
   private final Codec<A> codec;
   private final Class<A> type;
 
   private final Codec<List<A>> arrayCodec;
   private final Codec<List<List<A>>> arrayArrayCodec;
-
-  /** JDBC connection (pgjdbc) used for text-protocol baseline tests. */
-  private final java.sql.Connection pgjdbcConnection;
 
   /**
    * Persistent R2DBC connection whose codec sends parameters in <b>binary</b> format and expects
@@ -145,15 +166,16 @@ abstract class CodecITBase<A> {
     this.arrayCodec = codec.inDim();
     this.arrayArrayCodec = arrayCodec.inDim();
 
-    // Retrieve or create shared connections for this concrete subclass.
+    // Retrieve or create shared R2DBC connections for this concrete subclass.
     // computeIfAbsent ensures that even when jqwik instantiates the class
-    // multiple times (once per @Property), we only ever open the 5
-    // connections once.
+    // multiple times (once per @Property), we only ever open the connections
+    // once. Connections are closed by the JVM shutdown hook registered in the
+    // static initialiser rather than in @AfterAll, so they are never removed
+    // from the map during the test run and are therefore never re-created.
     SharedConnections conns =
         sharedConnectionsByClass.computeIfAbsent(
             this.getClass(), cls -> createSharedConnections(codec, type));
 
-    pgjdbcConnection = conns.pgjdbcConnection;
     binaryInBinaryOutConn = conns.binaryInBinaryOutConn;
     textInTextOutConn = conns.textInTextOutConn;
     textInBinaryOutConn = conns.textInBinaryOutConn;
@@ -166,20 +188,6 @@ abstract class CodecITBase<A> {
 
   @SuppressWarnings("unchecked")
   private SharedConnections createSharedConnections(Codec<A> codec, Class<A> type) {
-    java.sql.Connection pgjdbc;
-    try {
-      var props = new java.util.Properties();
-      props.setProperty("user", container.getUsername());
-      props.setProperty("password", container.getPassword());
-      // Disable server-side prepared-statement caching so that all result
-      // columns remain in text format (avoids rs.getString() returning
-      // "[B@…" for bytea columns after the binary-mode switch threshold).
-      props.setProperty("prepareThreshold", "0");
-      pgjdbc = DriverManager.getConnection(container.getJdbcUrl(), props);
-    } catch (SQLException e) {
-      throw new RuntimeException("Failed to open connection", e);
-    }
-
     Class<List<A>> listClass = (Class<List<A>>) (Class<?>) List.class;
     Codec<List<A>> arrayCd = codec.inDim();
     @SuppressWarnings("unchecked")
@@ -188,7 +196,6 @@ abstract class CodecITBase<A> {
 
     // Each connection handles both the scalar and array codec.
     return new SharedConnections(
-        pgjdbc,
         r2dbcConnect(
             true,
             new BinaryInBinaryOutR2dbcCodec<>(codec, type),
@@ -209,14 +216,6 @@ abstract class CodecITBase<A> {
         r2dbcConnect(false, new TextInTextOutR2dbcCodec<>(arrayArrayCd, listListClass)),
         r2dbcConnect(true, new TextInBinaryOutR2dbcCodec<>(arrayArrayCd, listListClass)),
         r2dbcConnect(false, new BinaryInTextOutR2dbcCodec<>(arrayArrayCd, listListClass)));
-  }
-
-  @AfterAll
-  void closeConnections() throws Exception {
-    SharedConnections conns = sharedConnectionsByClass.remove(this.getClass());
-    if (conns != null) {
-      conns.close();
-    }
   }
 
   // -----------------------------------------------------------------------
@@ -304,8 +303,8 @@ abstract class CodecITBase<A> {
     if (codec.scalarOid() == 0) {
       return;
     }
-    try (var ps =
-        pgjdbcConnection.prepareStatement("SELECT oid::int FROM pg_type WHERE typname = ?")) {
+    try (var conn = jdbcPool.getConnection();
+        var ps = conn.prepareStatement("SELECT oid::int FROM pg_type WHERE typname = ?")) {
       // TODO: Account for schema-qualified types names
       ps.setString(1, codec.name());
       try (ResultSet rs = ps.executeQuery()) {
@@ -322,8 +321,8 @@ abstract class CodecITBase<A> {
       return;
     }
     // Array types in pg_type are named "_<element_name>".
-    try (var ps =
-        pgjdbcConnection.prepareStatement("SELECT oid::int FROM pg_type WHERE typname = ?")) {
+    try (var conn = jdbcPool.getConnection();
+        var ps = conn.prepareStatement("SELECT oid::int FROM pg_type WHERE typname = ?")) {
       ps.setString(1, "_" + codec.name());
       try (ResultSet rs = ps.executeQuery()) {
         if (rs.next()) {
@@ -362,7 +361,8 @@ abstract class CodecITBase<A> {
 
   @Property(tries = 100)
   void roundtripsInTextToTextViaPgjdbc(@ForAll("values") A value) throws Exception {
-    try (var ps = pgjdbcConnection.prepareStatement("SELECT ?::" + codec.typeSig())) {
+    try (var conn = jdbcPool.getConnection();
+        var ps = conn.prepareStatement("SELECT ?::" + codec.typeSig())) {
       if (value != null) {
         PGobject obj = new PGobject();
         obj.setType(qualifiedCodecName(codec));
@@ -421,7 +421,8 @@ abstract class CodecITBase<A> {
 
   @Property(tries = 100)
   void arrayRoundtripsInTextToTextViaPgjdbc(@ForAll("arrayValues") List<A> value) throws Exception {
-    try (var ps = pgjdbcConnection.prepareStatement("SELECT ?::" + arrayCodec.typeSig())) {
+    try (var conn = jdbcPool.getConnection();
+        var ps = conn.prepareStatement("SELECT ?::" + arrayCodec.typeSig())) {
       if (value != null) {
         PGobject obj = new PGobject();
         obj.setType(qualifiedCodecName(arrayCodec));
@@ -482,7 +483,8 @@ abstract class CodecITBase<A> {
   @Property(tries = 100)
   void arrayArrayRoundtripsInTextToTextViaPgjdbc(@ForAll("arrayArrayValues") List<List<A>> value)
       throws Exception {
-    try (var ps = pgjdbcConnection.prepareStatement("SELECT ?::" + arrayArrayCodec.typeSig())) {
+    try (var conn = jdbcPool.getConnection();
+        var ps = conn.prepareStatement("SELECT ?::" + arrayArrayCodec.typeSig())) {
       if (value != null) {
         PGobject obj = new PGobject();
         obj.setType(pgjdbcCodecName(arrayArrayCodec));

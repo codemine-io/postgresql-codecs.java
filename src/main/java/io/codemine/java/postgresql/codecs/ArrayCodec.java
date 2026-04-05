@@ -51,6 +51,11 @@ final class ArrayCodec<A> implements Codec<List<A>> {
     return elementCodec.typeSig() + "[]";
   }
 
+  @Override
+  public Codec<List<List<A>>> inDim() {
+    return new ArrayCodec<>(this, delimiter);
+  }
+
   // -----------------------------------------------------------------------
   // Textual wire format
   // -----------------------------------------------------------------------
@@ -137,45 +142,51 @@ final class ArrayCodec<A> implements Codec<List<A>> {
     while (pos < input.length()) {
       char c = input.charAt(pos);
 
-      if (c == '{') {
-        // Sub-array element: delegate directly to the element codec which will consume the
-        // complete {..} block and return the next unparsed offset.
-        ParsingResult<A> result = elementCodec.decodeInText(input, pos);
-        list.add(result.value);
-        pos = result.nextOffset;
-      } else if (c == '"') {
-        // Quoted element: collect raw chars between double-quotes, honouring backslash escapes.
-        pos++; // skip opening '"'
-        StringBuilder elem = new StringBuilder();
-        while (pos < input.length()) {
-          char ec = input.charAt(pos);
-          if (ec == '\\' && pos + 1 < input.length()) {
-            elem.append(input.charAt(pos + 1));
-            pos += 2;
-          } else if (ec == '"') {
-            break;
-          } else {
-            elem.append(ec);
+      switch (c) {
+        case '{' -> {
+          // Sub-array element: delegate directly to the element codec which will consume the
+          // complete {..} block and return the next unparsed offset.
+          ParsingResult<A> result = elementCodec.decodeInText(input, pos);
+          list.add(result.value);
+          pos = result.nextOffset;
+        }
+        case '"' -> {
+          // Quoted element: collect raw chars between double-quotes, honouring backslash escapes.
+          pos++; // skip opening '"'
+          StringBuilder elem = new StringBuilder();
+          while (pos < input.length()) {
+            char ec = input.charAt(pos);
+            if (ec == '\\' && pos + 1 < input.length()) {
+              elem.append(input.charAt(pos + 1));
+              pos += 2;
+            } else if (ec == '"') {
+              break;
+            } else {
+              elem.append(ec);
+              pos++;
+            }
+          }
+          if (pos >= input.length() || input.charAt(pos) != '"') {
+            throw new DecodingException(input, offset, "Unterminated quoted array element");
+          }
+          pos++; // skip closing '"'
+          list.add(elementCodec.decodeInText(elem.toString(), 0).value);
+        }
+        default -> {
+          // Bare element: read until delimiter or '}'.
+          int start = pos;
+          while (pos < input.length()
+              && input.charAt(pos) != delimiter
+              && input.charAt(pos) != '}') {
             pos++;
           }
-        }
-        if (pos >= input.length() || input.charAt(pos) != '"') {
-          throw new DecodingException(input, offset, "Unterminated quoted array element");
-        }
-        pos++; // skip closing '"'
-        list.add(elementCodec.decodeInText(elem.toString(), 0).value);
-      } else {
-        // Bare element: read until delimiter or '}'.
-        int start = pos;
-        while (pos < input.length() && input.charAt(pos) != delimiter && input.charAt(pos) != '}') {
-          pos++;
-        }
-        String elemStr = input.subSequence(start, pos).toString();
-        // In PostgreSQL array literals, an unquoted NULL denotes a null element.
-        if ("NULL".equals(elemStr)) {
-          list.add(null);
-        } else {
-          list.add(elementCodec.decodeInText(elemStr, 0).value);
+          String elemStr = input.subSequence(start, pos).toString();
+          // In PostgreSQL array literals, an unquoted NULL denotes a null element.
+          if ("NULL".equals(elemStr)) {
+            list.add(null);
+          } else {
+            list.add(elementCodec.decodeInText(elemStr, 0).value);
+          }
         }
       }
 

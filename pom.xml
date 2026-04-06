@@ -101,6 +101,13 @@
             <version>1.9.3</version>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+            <version>6.3.0</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

@@ -4,7 +4,7 @@
 [![maven](https://img.shields.io/badge/maven-latest-green)](https://codemine.io/postgresql-codecs.java/latest/)
 [![javadoc](https://img.shields.io/badge/javadoc-latest-green)](https://codemine.io/postgresql-codecs.java/latest/apidocs/)
 [![javadoc](https://javadoc.io/badge2/io.codemine.java.postgresql/codecs/javadoc.svg)](https://javadoc.io/doc/io.codemine.java.postgresql/codecs)
-![Maven Central Version](https://img.shields.io/maven-central/v/io.codemine.java.postgresql/codecs)
+[![Maven Central Version](https://img.shields.io/maven-central/v/io.codemine.java.postgresql/codecs)](https://central.sonatype.com/artifact/io.codemine.java.postgresql/codecs)
 
 A driver-agnostic Java library for encoding and decoding PostgreSQL data types in both text and binary wire formats.
 
@@ -25,14 +25,6 @@ Every codec is heavily tested against a live PostgreSQL instance using both pgjd
 ## Installation
 
 The package is published to Maven Central under [`io.codemine.java.postgresql:codecs`](https://central.sonatype.com/artifact/io.codemine.java.postgresql/codecs).
-
-```xml
-<dependency>
-    <groupId>io.codemine.java.postgresql</groupId>
-    <artifactId>codecs</artifactId>
-    <version>0.1.1</version>
-</dependency>
-```
 
 ## Supported types
 

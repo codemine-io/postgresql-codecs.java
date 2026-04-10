@@ -285,6 +285,50 @@ class NullAndEmptyEdgeCaseTest {
   }
 
   // -----------------------------------------------------------------------
+  // Empty ltree values
+  // -----------------------------------------------------------------------
+
+  @Nested
+  class EmptyLtreeValues {
+
+    @Test
+    void emptyLtree_textEncoding() throws Exception {
+      Ltree value = new Ltree(List.of());
+      StringBuilder sb = new StringBuilder();
+      Codec.LTREE.encodeInText(sb, value);
+      assertEquals("", sb.toString());
+    }
+
+    @Test
+    void emptyLtree_textRoundTrip() throws Exception {
+      assertTextRoundTrip(Codec.LTREE, new Ltree(List.of()));
+    }
+
+    @Test
+    void emptyLtree_binaryRoundTrip() throws Exception {
+      assertBinaryRoundTrip(Codec.LTREE, new Ltree(List.of()));
+    }
+
+    @Test
+    void emptyLtreeArray_textEncoding() throws Exception {
+      Codec<List<Ltree>> arrayCodec = Codec.LTREE.inDim();
+      StringBuilder sb = new StringBuilder();
+      arrayCodec.encodeInText(sb, List.of(new Ltree(List.of())));
+      assertEquals("{\"\"}", sb.toString());
+    }
+
+    @Test
+    void emptyLtreeArray_textRoundTrip() throws Exception {
+      assertTextRoundTrip(Codec.LTREE.inDim(), List.of(new Ltree(List.of())));
+    }
+
+    @Test
+    void emptyLtreeArray_binaryRoundTrip() throws Exception {
+      assertBinaryRoundTrip(Codec.LTREE.inDim(), List.of(new Ltree(List.of())));
+    }
+  }
+
+  // -----------------------------------------------------------------------
   // Null fields in composite types
   // -----------------------------------------------------------------------
 

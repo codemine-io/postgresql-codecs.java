@@ -68,6 +68,7 @@ public interface Codec<A> {
   Codec<String> CITEXT = new CitextCodec();
   Codec<Tsvector> TSVECTOR = new TsvectorCodec();
   Codec<Hstore> HSTORE = new HstoreCodec();
+  Codec<Ltree> LTREE = new LtreeCodec();
   Codec<Range<Integer>> INT4RANGE =
       new RangeCodec<>(INT4, Comparator.naturalOrder(), "int4range", 3904, 3905);
   Codec<Range<Long>> INT8RANGE =

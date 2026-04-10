@@ -66,7 +66,6 @@ The package is published to Maven Central under [`io.codemine.java.postgresql:co
 | `circle` | `Circle` <sub><sup>(postgresql-codecs)</sup></sub> | `Codec.CIRCLE` |
 | `bit` | `Bit` <sub><sup>(postgresql-codecs)</sup></sub> | `Codec.BIT`, `Codec.bit(n)` |
 | `varbit` | `Bit` <sub><sup>(postgresql-codecs)</sup></sub> | `Codec.VARBIT`, `Codec.varbit(n)` |
-| `citext` | `String` | `Codec.CITEXT` |
 | `tsvector` | `Tsvector` <sub><sup>(postgresql-codecs)</sup></sub> | `Codec.TSVECTOR` |
 | `hstore` | `Hstore` <sub><sup>(postgresql-codecs)</sup></sub> | `Codec.HSTORE` |
 | `int4range` | `Range<Integer>` <sub><sup>(postgresql-codecs)</sup></sub> | `Codec.INT4RANGE` |
@@ -81,6 +80,8 @@ The package is published to Maven Central under [`io.codemine.java.postgresql:co
 | `tsmultirange` | `Multirange<LocalDateTime>` <sub><sup>(postgresql-codecs)</sup></sub> | `Codec.TSMULTIRANGE` |
 | `tstzmultirange` | `Multirange<Instant>` <sub><sup>(postgresql-codecs)</sup></sub> | `Codec.TSTZMULTIRANGE` |
 | `datemultirange` | `Multirange<LocalDate>` <sub><sup>(postgresql-codecs)</sup></sub> | `Codec.DATEMULTIRANGE` |
+| `citext` | `String` | `Codec.CITEXT` |
+| `ltree` | `Ltree` <sub><sup>(postgresql-codecs)</sup></sub> | `Codec.LTREE` |
 
 Any scalar codec can be promoted to array codec of any dimensionality. E.g.:
 

@@ -61,6 +61,11 @@ public interface Codec<A> {
   Codec<Path> PATH = new PathCodec();
   Codec<Polygon> POLYGON = new PolygonCodec();
   Codec<Circle> CIRCLE = new CircleCodec();
+  Codec<Box2d> BOX2D = new Box2dCodec();
+  Codec<Box3d> BOX3D = new Box3dCodec();
+  Codec<Geometry> GEOMETRY = new GeometryCodec();
+  Codec<Geography> GEOGRAPHY = new GeographyCodec();
+  Codec<GeometryDump> GEOMETRY_DUMP = new GeometryDumpCodec();
   Codec<Cidr> CIDR = new CidrCodec();
   Codec<Macaddr8> MACADDR8 = new Macaddr8Codec();
   Codec<Bit> BIT = new BitCodec();

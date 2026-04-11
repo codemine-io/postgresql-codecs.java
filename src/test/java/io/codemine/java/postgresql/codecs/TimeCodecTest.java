@@ -1,5 +1,6 @@
 package io.codemine.java.postgresql.codecs;
 
+import io.codemine.java.postgresql.CodecTestBase;
 import java.time.LocalTime;
 
 public class TimeCodecTest extends CodecTestBase<LocalTime> {

@@ -1,14 +1,11 @@
-package io.codemine.java.postgresql.codecs;
+package io.codemine.java.postgresql;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import io.codemine.java.postgresql.BinaryInBinaryOutR2dbcCodec;
-import io.codemine.java.postgresql.BinaryInTextOutR2dbcCodec;
-import io.codemine.java.postgresql.TextInBinaryOutR2dbcCodec;
-import io.codemine.java.postgresql.TextInTextOutR2dbcCodec;
+import io.codemine.java.postgresql.codecs.Codec;
 import io.r2dbc.postgresql.PostgresqlConnectionConfiguration;
 import io.r2dbc.postgresql.PostgresqlConnectionFactory;
 import io.r2dbc.spi.Connection;
@@ -27,7 +24,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-abstract class CodecITBase<A> {
+public abstract class CodecITBase<A> {
 
   /**
    * Cache of shared R2DBC connections keyed by concrete test class. Declared before the static
@@ -41,8 +38,7 @@ abstract class CodecITBase<A> {
   static final HikariDataSource jdbcPool;
 
   static {
-    container =
-        new PostgreSQLContainer<>("postgres:18").withCommand("postgres -c max_connections=500");
+    container = Containers.newPostgresContainer().withCommand("postgres -c max_connections=500");
     container.start();
 
     var hikariConfig = new HikariConfig();

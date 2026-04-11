@@ -3,6 +3,7 @@ package io.codemine.java.postgresql.codecs;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import io.codemine.java.postgresql.CodecTestBase;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;

@@ -3,6 +3,7 @@ package io.codemine.java.postgresql.codecs;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.codemine.java.postgresql.Containers;
 import io.codemine.java.postgresql.TextInBinaryOutR2dbcCodec;
 import io.codemine.java.postgresql.TextInTextOutR2dbcCodec;
 import io.codemine.java.postgresql.codecs.CompositeCodecTest.AnnotatedSegment;
@@ -47,7 +48,7 @@ class CompositeCodecIT {
   private static final AtomicBoolean DDL_DONE = new AtomicBoolean(false);
 
   static {
-    CONTAINER = new PostgreSQLContainer<>("postgres:18");
+    CONTAINER = Containers.newPostgresContainer();
     CONTAINER.start();
   }
 

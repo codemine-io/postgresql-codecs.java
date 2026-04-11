@@ -1,7 +1,8 @@
-package io.codemine.java.postgresql.codecs;
+package io.codemine.java.postgresql;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import io.codemine.java.postgresql.codecs.Codec;
 import java.nio.ByteBuffer;
 import java.util.List;
 import net.jqwik.api.Arbitrary;
@@ -9,7 +10,7 @@ import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
 import net.jqwik.api.Provide;
 
-abstract class CodecTestBase<A> {
+public abstract class CodecTestBase<A> {
 
   private final Codec<A> codec;
   private final Codec<List<A>> arrayCodec;
@@ -41,14 +42,14 @@ abstract class CodecTestBase<A> {
   }
 
   @Property(tries = 100)
-  void decodesEncodedInBinary(@ForAll("values") A value) throws Exception {
+  protected void decodesEncodedInBinary(@ForAll("values") A value) throws Exception {
     byte[] encoded = codec.encodeInBinaryToBytes(value);
     A decoded = codec.decodeInBinary(ByteBuffer.wrap(encoded), encoded.length);
     assertEquals(value, decoded);
   }
 
   @Property(tries = 100)
-  void decodesEncodedInText(@ForAll("values") A value) throws Exception {
+  protected void decodesEncodedInText(@ForAll("values") A value) throws Exception {
     StringBuilder sb = new StringBuilder();
     codec.encodeInText(sb, value);
     String encoded = sb.toString();
@@ -57,14 +58,15 @@ abstract class CodecTestBase<A> {
   }
 
   @Property(tries = 100)
-  void decodesArrayEncodedInBinary(@ForAll("arrayValues") List<A> value) throws Exception {
+  protected void decodesArrayEncodedInBinary(@ForAll("arrayValues") List<A> value)
+      throws Exception {
     byte[] encoded = arrayCodec.encodeInBinaryToBytes(value);
     List<A> decoded = arrayCodec.decodeInBinary(ByteBuffer.wrap(encoded), encoded.length);
     assertEquals(value, decoded);
   }
 
   @Property(tries = 100)
-  void decodesArrayEncodedInText(@ForAll("arrayValues") List<A> value) throws Exception {
+  protected void decodesArrayEncodedInText(@ForAll("arrayValues") List<A> value) throws Exception {
     StringBuilder sb = new StringBuilder();
     arrayCodec.encodeInText(sb, value);
     String encoded = sb.toString();
@@ -73,7 +75,7 @@ abstract class CodecTestBase<A> {
   }
 
   @Property(tries = 100)
-  void decodesArrayArrayEncodedInBinary(@ForAll("arrayArrayValues") List<List<A>> value)
+  protected void decodesArrayArrayEncodedInBinary(@ForAll("arrayArrayValues") List<List<A>> value)
       throws Exception {
     byte[] encoded = arrayArrayCodec.encodeInBinaryToBytes(value);
     List<List<A>> decoded =
@@ -82,7 +84,7 @@ abstract class CodecTestBase<A> {
   }
 
   @Property(tries = 100)
-  void decodesArrayArrayEncodedInText(@ForAll("arrayArrayValues") List<List<A>> value)
+  protected void decodesArrayArrayEncodedInText(@ForAll("arrayArrayValues") List<List<A>> value)
       throws Exception {
     StringBuilder sb = new StringBuilder();
     arrayArrayCodec.encodeInText(sb, value);

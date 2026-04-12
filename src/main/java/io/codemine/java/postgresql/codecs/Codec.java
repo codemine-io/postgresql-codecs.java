@@ -226,6 +226,20 @@ public interface Codec<A> {
     return java.sql.Types.OTHER;
   }
 
+  /**
+   * Returns {@code true} if this codec supports the PostgreSQL binary wire format.
+   *
+   * <p>By default, codecs only support the textual format, and binary support must be explicitly
+   * implemented by overriding the relevant methods.
+   *
+   * <p>All standard scalar types do support binary format, but some extensions don't. E.g., the
+   * {@code box2d} and {@code box3d} types provided by PostGIS only support text format, and their
+   * codecs return {@code false} here.
+   */
+  default boolean supportsBinaryFormat() {
+    return false;
+  }
+
   // -----------------------------------------------------------------------
   // Textual wire format
   // -----------------------------------------------------------------------
@@ -288,9 +302,14 @@ public interface Codec<A> {
    *
    * <p>The byte order is always <b>big-endian</b>, as required by the PostgreSQL wire protocol.
    *
+   * <p>The default implementation throws {@link UnsupportedOperationException}, so binary decoding
+   * must be explicitly implemented by overriding this method.
+   *
    * @throws UnsupportedOperationException if binary encoding is not implemented for this type
    */
-  void encodeInBinary(A value, ByteArrayOutputStream out);
+  default void encodeInBinary(A value, ByteArrayOutputStream out) {
+    throw new UnsupportedOperationException("Binary encoding not supported for type " + typeSig());
+  }
 
   /**
    * Convenience overload that encodes the value into a freshly-allocated byte array and returns it.
@@ -321,10 +340,15 @@ public interface Codec<A> {
    * <p>NULL handling ({@code length == -1}) must be performed by the caller before invoking this
    * method.
    *
+   * <p>The default implementation throws {@link UnsupportedOperationException}, so binary decoding
+   * must be explicitly implemented by overriding this method.
+   *
    * @throws DecodingException if the binary data is malformed
    * @throws UnsupportedOperationException if binary decoding is not implemented for this type
    */
-  A decodeInBinary(ByteBuffer buf, int length) throws DecodingException;
+  default A decodeInBinary(ByteBuffer buf, int length) throws DecodingException {
+    throw new UnsupportedOperationException("Binary decoding not supported for type " + typeSig());
+  }
 
   /**
    * Decodes a value from a byte array in the PostgreSQL binary wire format. Convenience wrapper

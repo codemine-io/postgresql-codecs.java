@@ -4,11 +4,11 @@ package io.codemine.java.postgresql.codecs;
  * PostgreSQL {@code interval} type. A time span with separate month, day, and microsecond
  * components.
  *
- * @param time time component in microseconds
- * @param day day component
- * @param month month component (may be decomposed into years and months for display)
+ * @param micros time component in microseconds
+ * @param days day component
+ * @param months month component (may be decomposed into years and months for display)
  */
-public record Interval(long time, int day, int month) {
+public record Interval(long micros, int days, int months) {
 
   @Override
   public String toString() {
@@ -18,10 +18,8 @@ public record Interval(long time, int day, int month) {
   }
 
   void appendInTextTo(StringBuilder sb) {
-    int months = month;
     int years = months / 12;
     int mons = months % 12;
-    int days = day;
 
     boolean hasParts = false;
 
@@ -43,35 +41,48 @@ public record Interval(long time, int day, int month) {
       sb.append(days).append(days == 1 ? " day" : " days");
       hasParts = true;
     }
-    if (time != 0 || !hasParts) {
-      if (hasParts) {
-        sb.append(' ');
-      }
-      writeTime(sb, time);
+    if (!hasParts) {
+      appendTime(sb);
+    } else if (micros != 0) {
+      sb.append(' ');
+      appendTime(sb);
     }
   }
 
-  private static void writeTime(StringBuilder sb, long timeMicros) {
-    if (timeMicros < 0) {
+  private void appendTime(StringBuilder sb) {
+    long microsState = micros;
+    if (microsState < 0) {
       sb.append('-');
-      timeMicros = -timeMicros;
+      microsState = -microsState;
     }
-    long hours = timeMicros / 3_600_000_000L;
-    timeMicros %= 3_600_000_000L;
+    long hours = microsState / 3_600_000_000L;
+    microsState %= 3_600_000_000L;
 
     pad2(sb, hours);
     sb.append(':');
 
-    long minutes = timeMicros / 60_000_000L;
-    timeMicros %= 60_000_000L;
+    long minutes = microsState / 60_000_000L;
+    microsState %= 60_000_000L;
     pad2(sb, minutes);
     sb.append(':');
 
-    long seconds = timeMicros / 1_000_000L;
-    long frac = timeMicros % 1_000_000L;
+    long seconds = microsState / 1_000_000L;
+    long frac = microsState % 1_000_000L;
     pad2(sb, seconds);
     if (frac > 0) {
-      appendFraction(sb, frac);
+      sb.append('.');
+      int val = (int) frac;
+      sb.append((char) ('0' + val / 100000));
+      sb.append((char) ('0' + val / 10000 % 10));
+      sb.append((char) ('0' + val / 1000 % 10));
+      sb.append((char) ('0' + val / 100 % 10));
+      sb.append((char) ('0' + val / 10 % 10));
+      sb.append((char) ('0' + val % 10));
+      int len = sb.length();
+      while (sb.charAt(len - 1) == '0') {
+        len--;
+      }
+      sb.setLength(len);
     }
   }
 
@@ -80,21 +91,5 @@ public record Interval(long time, int day, int month) {
       sb.append('0');
     }
     sb.append(v);
-  }
-
-  private static void appendFraction(StringBuilder sb, long micros) {
-    sb.append('.');
-    int val = (int) micros;
-    sb.append((char) ('0' + val / 100000));
-    sb.append((char) ('0' + val / 10000 % 10));
-    sb.append((char) ('0' + val / 1000 % 10));
-    sb.append((char) ('0' + val / 100 % 10));
-    sb.append((char) ('0' + val / 10 % 10));
-    sb.append((char) ('0' + val % 10));
-    int len = sb.length();
-    while (sb.charAt(len - 1) == '0') {
-      len--;
-    }
-    sb.setLength(len);
   }
 }

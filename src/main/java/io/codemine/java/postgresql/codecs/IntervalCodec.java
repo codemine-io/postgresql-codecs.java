@@ -41,7 +41,7 @@ final class IntervalCodec implements Codec<Interval> {
 
   @Override
   public void encodeInBinary(Interval value, ByteArrayOutputStream out) {
-    long time = value.time();
+    long time = value.micros();
     out.write((int) (time >>> 56) & 0xFF);
     out.write((int) (time >>> 48) & 0xFF);
     out.write((int) (time >>> 40) & 0xFF);
@@ -50,12 +50,12 @@ final class IntervalCodec implements Codec<Interval> {
     out.write((int) (time >>> 16) & 0xFF);
     out.write((int) (time >>> 8) & 0xFF);
     out.write((int) (time & 0xFF));
-    int day = value.day();
+    int day = value.days();
     out.write((day >>> 24) & 0xFF);
     out.write((day >>> 16) & 0xFF);
     out.write((day >>> 8) & 0xFF);
     out.write(day & 0xFF);
-    int month = value.month();
+    int month = value.months();
     out.write((month >>> 24) & 0xFF);
     out.write((month >>> 16) & 0xFF);
     out.write((month >>> 8) & 0xFF);

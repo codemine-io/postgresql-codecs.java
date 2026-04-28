@@ -55,8 +55,12 @@ public sealed interface Range<A> {
 
     public Bounded {
       // Infinite bounds are always exclusive — normalise to keep the record canonical.
-      if (lower == null) lowerInclusive = false;
-      if (upper == null) upperInclusive = false;
+      if (lower == null) {
+        lowerInclusive = false;
+      }
+      if (upper == null) {
+        upperInclusive = false;
+      }
     }
 
     @Override

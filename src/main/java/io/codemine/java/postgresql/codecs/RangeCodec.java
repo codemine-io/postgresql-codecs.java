@@ -129,7 +129,9 @@ final class RangeCodec<A> implements Codec<Range<A>> {
           unquoted.append(input.charAt(pos++));
         }
       }
-      if (pos < input.length()) pos++; // skip closing quote
+      if (pos < input.length()) {
+        pos++;
+      } // skip closing quote
       lower = elementCodec.decodeInTextFromString(unquoted.toString());
       if (pos >= input.length() || input.charAt(pos) != ',') {
         throw new Codec.DecodingException(input, offset, "Expected ',' after lower bound");
@@ -165,7 +167,9 @@ final class RangeCodec<A> implements Codec<Range<A>> {
           unquoted.append(input.charAt(pos++));
         }
       }
-      if (pos < input.length()) pos++; // skip closing quote
+      if (pos < input.length()) {
+        pos++;
+      } // skip closing quote
       upper = elementCodec.decodeInTextFromString(unquoted.toString());
       if (pos >= input.length()) {
         throw new Codec.DecodingException(
@@ -204,7 +208,9 @@ final class RangeCodec<A> implements Codec<Range<A>> {
       if (c == '"') {
         i++;
         while (i < input.length() && input.charAt(i) != '"') {
-          if (input.charAt(i) == '\\') i++;
+          if (input.charAt(i) == '\\') {
+            i++;
+          }
           i++;
         }
       } else if (c == ',') {
@@ -220,7 +226,9 @@ final class RangeCodec<A> implements Codec<Range<A>> {
       if (c == '"') {
         i++;
         while (i < input.length() && input.charAt(i) != '"') {
-          if (input.charAt(i) == '\\') i++;
+          if (input.charAt(i) == '\\') {
+            i++;
+          }
           i++;
         }
       } else if (c == ']' || c == ')') {

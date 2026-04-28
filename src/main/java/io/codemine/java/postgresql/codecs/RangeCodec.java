@@ -18,6 +18,14 @@ final class RangeCodec<A> implements Codec<Range<A>> {
 
   private final Codec<A> elementCodec;
   private final Comparator<A> comparator;
+
+  /**
+   * {@code true} for discrete range types ({@code int4range}, {@code int8range}, {@code daterange})
+   * that PostgreSQL canonicalises to {@code [lower, upper)}. The random generator restricts itself
+   * to that canonical form so that integration tests round-trip correctly.
+   */
+  private final boolean discrete;
+
   private final String typeName;
   private final int scalarOid;
   private final int arrayOid;
@@ -25,11 +33,13 @@ final class RangeCodec<A> implements Codec<Range<A>> {
   RangeCodec(
       Codec<A> elementCodec,
       Comparator<A> comparator,
+      boolean discrete,
       String typeName,
       int scalarOid,
       int arrayOid) {
     this.elementCodec = elementCodec;
     this.comparator = comparator;
+    this.discrete = discrete;
     this.typeName = typeName;
     this.scalarOid = scalarOid;
     this.arrayOid = arrayOid;
@@ -71,14 +81,16 @@ final class RangeCodec<A> implements Codec<Range<A>> {
         if (b.lower() == null) {
           sb.append('(');
         } else {
-          sb.append('[');
+          sb.append(b.lowerInclusive() ? '[' : '(');
           elementCodec.encodeInText(sb, b.lower());
         }
         sb.append(',');
-        if (b.upper() != null) {
+        if (b.upper() == null) {
+          sb.append(')');
+        } else {
           elementCodec.encodeInText(sb, b.upper());
+          sb.append(b.upperInclusive() ? ']' : ')');
         }
-        sb.append(')');
       }
     }
   }
@@ -97,108 +109,121 @@ final class RangeCodec<A> implements Codec<Range<A>> {
     }
 
     int pos = offset;
-    char openBracket = input.charAt(pos);
+    char openBracket = input.charAt(pos++);
     if (openBracket != '[' && openBracket != '(') {
       throw new Codec.DecodingException(input, offset, "Expected '[' or '(' to open range literal");
     }
-    pos++;
+    boolean lowerInclusive = (openBracket == '[');
 
-    // Parse lower bound
+    // Parse lower bound value
     A lower = null;
-    if (openBracket == '[') {
-      // Inclusive lower bound — parse the element value
-      // Need to handle possible quoted values
-      if (pos < input.length() && input.charAt(pos) == '"') {
-        pos++; // skip opening quote
-        StringBuilder unquoted = new StringBuilder();
-        while (pos < input.length() && input.charAt(pos) != '"') {
-          if (input.charAt(pos) == '\\' && pos + 1 < input.length()) {
-            unquoted.append(input.charAt(pos + 1));
-            pos += 2;
-          } else {
-            unquoted.append(input.charAt(pos));
-            pos++;
-          }
+    if (pos < input.length() && input.charAt(pos) == '"') {
+      // Quoted lower bound
+      pos++; // skip opening quote
+      StringBuilder unquoted = new StringBuilder();
+      while (pos < input.length() && input.charAt(pos) != '"') {
+        if (input.charAt(pos) == '\\' && pos + 1 < input.length()) {
+          unquoted.append(input.charAt(pos + 1));
+          pos += 2;
+        } else {
+          unquoted.append(input.charAt(pos++));
         }
-        if (pos < input.length()) {
-          pos++; // skip closing quote
-        }
-        lower = elementCodec.decodeInTextFromString(unquoted.toString());
-      } else {
-        // Parse until comma
-        int commaPos = findComma(input, pos);
-        if (commaPos < 0) {
-          throw new Codec.DecodingException(input, offset, "Missing ',' in range literal");
-        }
-        String lowerStr = input.subSequence(pos, commaPos).toString();
-        lower = elementCodec.decodeInTextFromString(lowerStr);
-        pos = commaPos;
       }
-    }
-    // openBracket == '(' means lower is infinite (null), skip to comma
-
-    // Expect comma
-    if (pos >= input.length()) {
-      throw new Codec.DecodingException(input, offset, "Unexpected end of range input");
-    }
-    if (input.charAt(pos) == ',') {
-      pos++;
+      if (pos < input.length()) pos++; // skip closing quote
+      lower = elementCodec.decodeInTextFromString(unquoted.toString());
+      if (pos >= input.length() || input.charAt(pos) != ',') {
+        throw new Codec.DecodingException(input, offset, "Expected ',' after lower bound");
+      }
+      pos++; // skip comma
     } else {
-      throw new Codec.DecodingException(input, offset, "Expected ',' in range literal");
-    }
-
-    // Parse upper bound
-    A upper = null;
-    if (pos < input.length() && input.charAt(pos) != ')') {
-      // There's an upper bound
-      if (input.charAt(pos) == '"') {
-        pos++; // skip opening quote
-        StringBuilder unquoted = new StringBuilder();
-        while (pos < input.length() && input.charAt(pos) != '"') {
-          if (input.charAt(pos) == '\\' && pos + 1 < input.length()) {
-            unquoted.append(input.charAt(pos + 1));
-            pos += 2;
-          } else {
-            unquoted.append(input.charAt(pos));
-            pos++;
-          }
-        }
-        if (pos < input.length()) {
-          pos++; // skip closing quote
-        }
-        upper = elementCodec.decodeInTextFromString(unquoted.toString());
-      } else {
-        int closePos = findCloseParen(input, pos);
-        if (closePos < 0) {
-          throw new Codec.DecodingException(input, offset, "Missing ')' in range literal");
-        }
-        String upperStr = input.subSequence(pos, closePos).toString();
-        upper = elementCodec.decodeInTextFromString(upperStr);
-        pos = closePos;
+      // Unquoted: scan to comma
+      int commaPos = findComma(input, pos);
+      if (commaPos < 0) {
+        throw new Codec.DecodingException(input, offset, "Missing ',' in range literal");
       }
+      String lowerStr = input.subSequence(pos, commaPos).toString();
+      if (!lowerStr.isEmpty()) {
+        lower = elementCodec.decodeInTextFromString(lowerStr);
+      } else {
+        lowerInclusive = false; // empty text = infinite lower = always exclusive
+      }
+      pos = commaPos + 1;
     }
 
-    // Expect closing paren
-    if (pos >= input.length() || input.charAt(pos) != ')') {
-      throw new Codec.DecodingException(input, offset, "Expected ')' to close range literal");
+    // Parse upper bound value and closing bracket
+    A upper = null;
+    boolean upperInclusive;
+    if (pos < input.length() && input.charAt(pos) == '"') {
+      // Quoted upper bound
+      pos++; // skip opening quote
+      StringBuilder unquoted = new StringBuilder();
+      while (pos < input.length() && input.charAt(pos) != '"') {
+        if (input.charAt(pos) == '\\' && pos + 1 < input.length()) {
+          unquoted.append(input.charAt(pos + 1));
+          pos += 2;
+        } else {
+          unquoted.append(input.charAt(pos++));
+        }
+      }
+      if (pos < input.length()) pos++; // skip closing quote
+      upper = elementCodec.decodeInTextFromString(unquoted.toString());
+      if (pos >= input.length()) {
+        throw new Codec.DecodingException(
+            input, offset, "Missing closing bracket in range literal");
+      }
+      char closeBracket = input.charAt(pos++);
+      if (closeBracket != ']' && closeBracket != ')') {
+        throw new Codec.DecodingException(
+            input, offset, "Expected ']' or ')' to close range literal");
+      }
+      upperInclusive = (closeBracket == ']');
+    } else {
+      // Unquoted: scan to closing bracket
+      int closePos = findCloseBracket(input, pos);
+      if (closePos < 0) {
+        throw new Codec.DecodingException(
+            input, offset, "Missing closing bracket in range literal");
+      }
+      char closeBracket = input.charAt(closePos);
+      upperInclusive = (closeBracket == ']');
+      String upperStr = input.subSequence(pos, closePos).toString();
+      if (!upperStr.isEmpty()) {
+        upper = elementCodec.decodeInTextFromString(upperStr);
+      } else {
+        upperInclusive = false; // empty text = infinite upper = always exclusive
+      }
+      pos = closePos + 1;
     }
-    pos++;
 
-    return new Codec.ParsingResult<>(Range.bounded(lower, upper), pos);
+    return new Codec.ParsingResult<>(Range.of(lower, lowerInclusive, upper, upperInclusive), pos);
   }
 
   private static int findComma(CharSequence input, int from) {
     for (int i = from; i < input.length(); i++) {
-      if (input.charAt(i) == ',') {
+      char c = input.charAt(i);
+      if (c == '"') {
+        i++;
+        while (i < input.length() && input.charAt(i) != '"') {
+          if (input.charAt(i) == '\\') i++;
+          i++;
+        }
+      } else if (c == ',') {
         return i;
       }
     }
     return -1;
   }
 
-  private static int findCloseParen(CharSequence input, int from) {
+  private static int findCloseBracket(CharSequence input, int from) {
     for (int i = from; i < input.length(); i++) {
-      if (input.charAt(i) == ')') {
+      char c = input.charAt(i);
+      if (c == '"') {
+        i++;
+        while (i < input.length() && input.charAt(i) != '"') {
+          if (input.charAt(i) == '\\') i++;
+          i++;
+        }
+      } else if (c == ']' || c == ')') {
         return i;
       }
     }
@@ -217,6 +242,7 @@ final class RangeCodec<A> implements Codec<Range<A>> {
   // bit 4: RANGE_UB_INF (upper bound infinite)
   private static final int RANGE_EMPTY = 0x01;
   private static final int RANGE_LB_INC = 0x02;
+  private static final int RANGE_UB_INC = 0x04;
   private static final int RANGE_LB_INF = 0x08;
   private static final int RANGE_UB_INF = 0x10;
 
@@ -228,13 +254,14 @@ final class RangeCodec<A> implements Codec<Range<A>> {
         int flags = 0;
         if (b.lower() == null) {
           flags |= RANGE_LB_INF;
-        } else {
-          flags |= RANGE_LB_INC; // lower is always inclusive in normalized form
+        } else if (b.lowerInclusive()) {
+          flags |= RANGE_LB_INC;
         }
         if (b.upper() == null) {
           flags |= RANGE_UB_INF;
+        } else if (b.upperInclusive()) {
+          flags |= RANGE_UB_INC;
         }
-        // upper is always exclusive in normalized form, so no RANGE_UB_INC
         out.write(flags);
         if (b.lower() != null) {
           byte[] lowerBytes = elementCodec.encodeInBinaryToBytes(b.lower());
@@ -258,7 +285,9 @@ final class RangeCodec<A> implements Codec<Range<A>> {
     }
 
     boolean lowerInfinite = (flags & RANGE_LB_INF) != 0;
+    boolean lowerInclusive = (flags & RANGE_LB_INC) != 0;
     boolean upperInfinite = (flags & RANGE_UB_INF) != 0;
+    boolean upperInclusive = (flags & RANGE_UB_INC) != 0;
 
     A lower = null;
     if (!lowerInfinite) {
@@ -272,7 +301,7 @@ final class RangeCodec<A> implements Codec<Range<A>> {
       upper = elementCodec.decodeInBinary(buf, upperLen);
     }
 
-    return Range.bounded(lower, upper);
+    return Range.of(lower, lowerInclusive, upper, upperInclusive);
   }
 
   // -----------------------------------------------------------------------
@@ -298,7 +327,7 @@ final class RangeCodec<A> implements Codec<Range<A>> {
     A lower = lowerInfinite ? null : elementCodec.random(r, size);
     A upper = upperInfinite ? null : elementCodec.random(r, size);
 
-    // Ensure lower <= upper; if equal, canonicalize to empty.
+    // Ensure lower <= upper; if equal and we'd produce an empty range, fall back to empty.
     if (!lowerInfinite && !upperInfinite) {
       int cmp = comparator.compare(lower, upper);
       if (cmp == 0) {
@@ -312,7 +341,16 @@ final class RangeCodec<A> implements Codec<Range<A>> {
       }
     }
 
-    return Range.bounded(lower, upper);
+    if (discrete) {
+      // Discrete types are canonicalised by PostgreSQL to [lower, upper), so always use that form
+      // to avoid round-trip mismatches in integration tests.
+      return Range.bounded(lower, upper);
+    }
+
+    // For continuous types all four inclusivity combinations are valid and distinct.
+    boolean lowerInclusive = !lowerInfinite && r.nextBoolean();
+    boolean upperInclusive = !upperInfinite && r.nextBoolean();
+    return Range.of(lower, lowerInclusive, upper, upperInclusive);
   }
 
   // -----------------------------------------------------------------------

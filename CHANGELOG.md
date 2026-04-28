@@ -2,6 +2,7 @@
 
 ## Non-breaking
 
+- Added `Interval.of(Duration)` and `Interval.toDuration()` helpers for converting PostgreSQL `interval` values to and from `java.time.Duration` with microsecond precision.
 - Added `Timetz.of(OffsetTime)` and `Timetz.toOffsetTime()` helpers for converting PostgreSQL
 	`timetz` values to and from `java.time.OffsetTime` with microsecond precision.
 

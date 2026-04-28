@@ -17,3 +17,15 @@ Study https://www.npgsql.org/doc/dev/type-representations.html for a sort of a s
 # Testing
 
 Use quickcheck (https://github.com/pholser/junit-quickcheck) and testcontainers to test codecs against a real PostgreSQL instance and simulate various edge cases.
+
+# Changelog management
+
+Accumulate the unreleased changes in the `Unreleased` section at the top of the `CHANGELOG.md` file. The release workflow automatically relabels the `Unreleased` section to the new version.
+
+When implementing changes, describe every user-facing change in the changelog. 
+
+Focus on the following categories:
+
+- Non-breaking changes: New features, improvements and optimizations that do not break existing functionality.
+- Fixes: Bug fixes and error handling improvements that do not break existing functionality.
+- Breaking changes: Changes that break existing functionality, such as API changes, removed features, or changes in behavior. These should be clearly marked and described in detail to help users understand the impact of the change and how to adapt their code if necessary.

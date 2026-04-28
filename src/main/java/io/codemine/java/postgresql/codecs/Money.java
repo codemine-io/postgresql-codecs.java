@@ -15,10 +15,9 @@ import java.math.BigDecimal;
  * obtain a human-readable decimal value, and {@link #of(BigDecimal, int)} to construct a {@code
  * Money} from one.
  *
- * <p>The scale is not stored in the value itself. It is a property of the codec (see {@link
- * Codec#MONEY} and {@link Codec#money(int)}) and ultimately of the database configuration. Both
- * {@link #of(BigDecimal, int)} and {@link #toBigDecimal(int)} therefore accept the {@code decimals}
- * parameter explicitly.
+ * <p>The scale is not stored in the value itself. It is a property of the codec ({@link
+ * Codec#money(int)}) and ultimately of the database configuration. Both {@link #of(BigDecimal,
+ * int)} and {@link #toBigDecimal(int)} therefore accept the {@code decimals} parameter explicitly.
  *
  * @param amount the raw PostgreSQL-internal scaled integer
  */

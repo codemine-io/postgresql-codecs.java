@@ -145,8 +145,6 @@ public interface Codec<A> {
    * determined by the database's {@code lc_monetary} locale setting. The most common value is
    * {@code 2} (cents), but locales without a fractional unit (e.g. Japanese yen) use {@code 0}.
    *
-   * <p>Use {@link #MONEY} for the common case of 2 decimal places.
-   *
    * @param decimals the number of fractional digits (must be ≥ 0)
    */
   static Codec<Money> money(int decimals) {

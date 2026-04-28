@@ -2,6 +2,7 @@ package io.codemine.java.postgresql.codecs;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.ByteArrayOutputStream;
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.util.Comparator;
 import java.util.List;
@@ -147,7 +148,7 @@ public interface Codec<A> {
    *
    * @param decimals the number of fractional digits (must be ≥ 0)
    */
-  static Codec<Money> money(int decimals) {
+  static Codec<BigDecimal> money(int decimals) {
     return new MoneyCodec(decimals);
   }
 

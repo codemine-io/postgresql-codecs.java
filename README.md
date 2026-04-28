@@ -46,7 +46,7 @@ The package is published to Maven Central under [`io.codemine.java.postgresql:co
 | `json` | `JsonNode` <sub><sup>(jackson)</sup></sub> | `Codec.JSON` |
 | `jsonb` | `JsonNode` <sub><sup>(jackson)</sup></sub> | `Codec.JSONB` |
 | `oid` | `Long` | `Codec.OID` |
-| `money` | `Money` <sub><sup>(postgresql-codecs)</sup></sub> | `Codec.money(int decimals)` |
+| `money` | `BigDecimal` | `Codec.money(int decimals)` |
 | `date` | `LocalDate` | `Codec.DATE` |
 | `time` | `LocalTime` | `Codec.TIME` |
 | `timetz` | `Timetz` <sub><sup>(postgresql-codecs)</sup></sub> | `Codec.TIMETZ` |

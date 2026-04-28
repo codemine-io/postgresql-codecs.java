@@ -1,15 +1,20 @@
 package io.codemine.java.postgresql.codecs;
 
 import java.io.ByteArrayOutputStream;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.ByteBuffer;
 import java.util.Random;
 
 /** Codec for PostgreSQL {@code money} values. */
-final class MoneyCodec implements Codec<Money> {
+final class MoneyCodec implements Codec<BigDecimal> {
 
   private final int decimals;
 
   MoneyCodec(int decimals) {
+    if (decimals < 0) {
+      throw new IllegalArgumentException("decimals must be non-negative, got " + decimals);
+    }
     this.decimals = decimals;
   }
 
@@ -33,8 +38,8 @@ final class MoneyCodec implements Codec<Money> {
    * any currency symbol or grouping separators, which PostgreSQL accepts on all locales.
    */
   @Override
-  public void encodeInText(StringBuilder sb, Money value) {
-    sb.append(value.toBigDecimal(decimals).toPlainString());
+  public void encodeInText(StringBuilder sb, BigDecimal value) {
+    sb.append(normalize(value).toPlainString());
   }
 
   /**
@@ -50,7 +55,7 @@ final class MoneyCodec implements Codec<Money> {
    * </ul>
    */
   @Override
-  public Codec.ParsingResult<Money> decodeInText(CharSequence input, int offset)
+  public Codec.ParsingResult<BigDecimal> decodeInText(CharSequence input, int offset)
       throws Codec.DecodingException {
     String s = input.subSequence(offset, input.length()).toString().trim();
     try {
@@ -96,15 +101,15 @@ final class MoneyCodec implements Codec<Money> {
       if (negative) {
         amount = -amount;
       }
-      return new Codec.ParsingResult<>(new Money(amount), input.length());
+      return new Codec.ParsingResult<>(BigDecimal.valueOf(amount, decimals), input.length());
     } catch (NumberFormatException e) {
       throw new Codec.DecodingException(input, offset, "Invalid money: " + e.getMessage());
     }
   }
 
   @Override
-  public void encodeInBinary(Money value, ByteArrayOutputStream out) {
-    long v = value.amount();
+  public void encodeInBinary(BigDecimal value, ByteArrayOutputStream out) {
+    long v = toScaledLong(value);
     out.write((int) (v >>> 56) & 0xFF);
     out.write((int) (v >>> 48) & 0xFF);
     out.write((int) (v >>> 40) & 0xFF);
@@ -116,17 +121,35 @@ final class MoneyCodec implements Codec<Money> {
   }
 
   @Override
-  public Money decodeInBinary(ByteBuffer buf, int length) {
-    return new Money(buf.getLong());
+  public BigDecimal decodeInBinary(ByteBuffer buf, int length) {
+    return BigDecimal.valueOf(buf.getLong(), decimals);
   }
 
   @Override
-  public Money random(Random r, int size) {
+  public BigDecimal random(Random r, int size) {
     if (size == 0) {
-      return new Money(0L);
+      return BigDecimal.ZERO.setScale(decimals);
     }
     long bound = (long) size * pow10(decimals);
-    return new Money(r.nextLong(-bound, bound + 1));
+    return BigDecimal.valueOf(r.nextLong(-bound, bound + 1), decimals);
+  }
+
+  private BigDecimal normalize(BigDecimal value) {
+    return value.setScale(decimals, RoundingMode.UNNECESSARY);
+  }
+
+  private long toScaledLong(BigDecimal value) {
+    try {
+      return normalize(value).unscaledValue().longValueExact();
+    } catch (ArithmeticException e) {
+      throw new IllegalArgumentException(
+          "Money value "
+              + value
+              + " cannot be represented with "
+              + decimals
+              + " fractional digits as a signed 64-bit integer",
+          e);
+    }
   }
 
   private static long pow10(int n) {

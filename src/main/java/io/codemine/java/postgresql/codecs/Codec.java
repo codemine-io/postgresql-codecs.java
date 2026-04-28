@@ -69,17 +69,17 @@ public interface Codec<A> {
   Codec<Hstore> HSTORE = new HstoreCodec();
   Codec<Ltree> LTREE = new LtreeCodec();
   Codec<Range<Integer>> INT4RANGE =
-      new RangeCodec<>(INT4, Comparator.naturalOrder(), "int4range", 3904, 3905);
+      new RangeCodec<>(INT4, Comparator.naturalOrder(), true, "int4range", 3904, 3905);
   Codec<Range<Long>> INT8RANGE =
-      new RangeCodec<>(INT8, Comparator.naturalOrder(), "int8range", 3926, 3927);
+      new RangeCodec<>(INT8, Comparator.naturalOrder(), true, "int8range", 3926, 3927);
   Codec<Range<java.math.BigDecimal>> NUMRANGE =
-      new RangeCodec<>(NUMERIC, Comparator.naturalOrder(), "numrange", 3906, 3907);
+      new RangeCodec<>(NUMERIC, Comparator.naturalOrder(), false, "numrange", 3906, 3907);
   Codec<Range<java.time.LocalDateTime>> TSRANGE =
-      new RangeCodec<>(TIMESTAMP, Comparator.naturalOrder(), "tsrange", 3908, 3909);
+      new RangeCodec<>(TIMESTAMP, Comparator.naturalOrder(), false, "tsrange", 3908, 3909);
   Codec<Range<java.time.Instant>> TSTZRANGE =
-      new RangeCodec<>(TIMESTAMPTZ, Comparator.naturalOrder(), "tstzrange", 3910, 3911);
+      new RangeCodec<>(TIMESTAMPTZ, Comparator.naturalOrder(), false, "tstzrange", 3910, 3911);
   Codec<Range<java.time.LocalDate>> DATERANGE =
-      new RangeCodec<>(DATE, Comparator.naturalOrder(), "daterange", 3912, 3913);
+      new RangeCodec<>(DATE, Comparator.naturalOrder(), true, "daterange", 3912, 3913);
   Codec<Multirange<Integer>> INT4MULTIRANGE =
       new MultirangeCodec<>(
           INT4RANGE, INT4, Comparator.naturalOrder(), "int4multirange", 4451, 6150);

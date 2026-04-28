@@ -534,4 +534,14 @@ public final class CompositeCodec<Z> implements Codec<Z> {
       this.codec = codec;
     }
   }
+
+  @Override
+  public boolean supportsBinaryFormat() {
+    for (Field field : fields) {
+      if (!field.codec.supportsBinaryFormat()) {
+        return false;
+      }
+    }
+    return true;
+  }
 }

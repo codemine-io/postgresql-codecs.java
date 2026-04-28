@@ -1,12 +1,17 @@
 package io.codemine.java.postgresql.codecs;
 
 import java.io.ByteArrayOutputStream;
-import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.util.Random;
 
 /** Codec for PostgreSQL {@code money} values. */
-final class MoneyCodec implements Codec<Long> {
+final class MoneyCodec implements Codec<Money> {
+
+  private final int decimals;
+
+  MoneyCodec(int decimals) {
+    this.decimals = decimals;
+  }
 
   @Override
   public String name() {
@@ -28,9 +33,8 @@ final class MoneyCodec implements Codec<Long> {
    * any currency symbol or grouping separators, which PostgreSQL accepts on all locales.
    */
   @Override
-  public void encodeInText(StringBuilder sb, Long value) {
-    // BigDecimal.valueOf(unscaled, scale) is safe for all long values including Long.MIN_VALUE.
-    sb.append(BigDecimal.valueOf(value, 2).toPlainString());
+  public void encodeInText(StringBuilder sb, Money value) {
+    sb.append(value.toBigDecimal(decimals).toPlainString());
   }
 
   /**
@@ -41,12 +45,12 @@ final class MoneyCodec implements Codec<Long> {
    *   <li>Handles both {@code -value} and {@code (value)} negative notations.
    *   <li>Strips all currency symbols and other non-numeric characters.
    *   <li>Auto-detects the decimal separator: whichever of {@code .} or {@code ,} appears last and
-   *       is followed by exactly 2 digits is treated as the decimal separator; the other is a
-   *       grouping separator.
+   *       is followed by exactly {@code decimals} digits is treated as the decimal separator; the
+   *       other is a grouping separator.
    * </ul>
    */
   @Override
-  public Codec.ParsingResult<Long> decodeInText(CharSequence input, int offset)
+  public Codec.ParsingResult<Money> decodeInText(CharSequence input, int offset)
       throws Codec.DecodingException {
     String s = input.subSequence(offset, input.length()).toString().trim();
     try {
@@ -66,59 +70,70 @@ final class MoneyCodec implements Codec<Long> {
       // Strip everything except digits, '.' and ','.
       s = s.replaceAll("[^0-9.,]", "");
 
-      long dollars;
-      long cents;
+      long integerPart;
+      long fractionalPart;
 
       int lastDot = s.lastIndexOf('.');
       int lastComma = s.lastIndexOf(',');
       int lastSep = Math.max(lastDot, lastComma);
 
-      if (lastSep >= 0 && (s.length() - lastSep - 1) == 2) {
-        // The last separator is followed by exactly 2 digits → it is the decimal separator.
+      if (lastSep >= 0 && (s.length() - lastSep - 1) == decimals) {
+        // The last separator is followed by exactly `decimals` digits → decimal separator.
         char grpSep = (s.charAt(lastSep) == '.') ? ',' : '.';
         String intPart = s.substring(0, lastSep).replace(String.valueOf(grpSep), "");
         String fracPart = s.substring(lastSep + 1);
-        dollars = intPart.isEmpty() ? 0L : Long.parseLong(intPart);
-        cents = Long.parseLong(fracPart);
+        integerPart = intPart.isEmpty() ? 0L : Long.parseLong(intPart);
+        fractionalPart = Long.parseLong(fracPart);
       } else {
-        // No recognisable decimal separator — treat the whole string as integer dollars.
+        // No recognisable decimal separator — treat the whole string as integer units.
         String digits = s.replaceAll("[.,]", "");
-        dollars = digits.isEmpty() ? 0L : Long.parseLong(digits);
-        cents = 0L;
+        integerPart = digits.isEmpty() ? 0L : Long.parseLong(digits);
+        fractionalPart = 0L;
       }
 
-      long value = dollars * 100L + cents;
+      long scale = pow10(decimals);
+      long amount = integerPart * scale + fractionalPart;
       if (negative) {
-        value = -value;
+        amount = -amount;
       }
-      return new Codec.ParsingResult<>(value, input.length());
+      return new Codec.ParsingResult<>(new Money(amount), input.length());
     } catch (NumberFormatException e) {
       throw new Codec.DecodingException(input, offset, "Invalid money: " + e.getMessage());
     }
   }
 
   @Override
-  public void encodeInBinary(Long value, ByteArrayOutputStream out) {
-    out.write((int) (value >>> 56) & 0xFF);
-    out.write((int) (value >>> 48) & 0xFF);
-    out.write((int) (value >>> 40) & 0xFF);
-    out.write((int) (value >>> 32) & 0xFF);
-    out.write((int) (value >>> 24) & 0xFF);
-    out.write((int) (value >>> 16) & 0xFF);
-    out.write((int) (value >>> 8) & 0xFF);
-    out.write((int) (value & 0xFF));
+  public void encodeInBinary(Money value, ByteArrayOutputStream out) {
+    long v = value.amount();
+    out.write((int) (v >>> 56) & 0xFF);
+    out.write((int) (v >>> 48) & 0xFF);
+    out.write((int) (v >>> 40) & 0xFF);
+    out.write((int) (v >>> 32) & 0xFF);
+    out.write((int) (v >>> 24) & 0xFF);
+    out.write((int) (v >>> 16) & 0xFF);
+    out.write((int) (v >>> 8) & 0xFF);
+    out.write((int) (v & 0xFF));
   }
 
   @Override
-  public Long decodeInBinary(ByteBuffer buf, int length) {
-    return buf.getLong();
+  public Money decodeInBinary(ByteBuffer buf, int length) {
+    return new Money(buf.getLong());
   }
 
   @Override
-  public Long random(Random r, int size) {
+  public Money random(Random r, int size) {
     if (size == 0) {
-      return 0L;
+      return new Money(0L);
     }
-    return r.nextLong(-((long) size * 100), (long) size * 100 + 1);
+    long bound = (long) size * pow10(decimals);
+    return new Money(r.nextLong(-bound, bound + 1));
+  }
+
+  private static long pow10(int n) {
+    long result = 1L;
+    for (int i = 0; i < n; i++) {
+      result *= 10L;
+    }
+    return result;
   }
 }

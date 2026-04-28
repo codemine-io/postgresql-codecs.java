@@ -47,7 +47,6 @@ public interface Codec<A> {
   Codec<String> BPCHAR = new BpcharCodec();
   Codec<Byte> CHAR = new CharCodec();
   Codec<Integer> OID = new OidCodec();
-  Codec<Long> MONEY = new MoneyCodec();
   Codec<java.time.LocalDate> DATE = new DateCodec();
   Codec<java.time.LocalTime> TIME = new TimeCodec();
   Codec<Timetz> TIMETZ = new TimetzCodec();
@@ -137,6 +136,21 @@ public interface Codec<A> {
       return VARCHAR;
     }
     return new VarcharCodec(n);
+  }
+
+  /**
+   * Returns a codec for PostgreSQL {@code money} — a monetary amount stored as a scaled integer.
+   *
+   * <p>The {@code decimals} parameter specifies the number of fractional decimal digits, which is
+   * determined by the database's {@code lc_monetary} locale setting. The most common value is
+   * {@code 2} (cents), but locales without a fractional unit (e.g. Japanese yen) use {@code 0}.
+   *
+   * <p>Use {@link #MONEY} for the common case of 2 decimal places.
+   *
+   * @param decimals the number of fractional digits (must be ≥ 0)
+   */
+  static Codec<Money> money(int decimals) {
+    return new MoneyCodec(decimals);
   }
 
   /**

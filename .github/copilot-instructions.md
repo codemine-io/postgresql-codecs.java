@@ -29,3 +29,37 @@ Focus on the following categories:
 - Non-breaking changes: New features, improvements and optimizations that do not break existing functionality.
 - Fixes: Bug fixes and error handling improvements that do not break existing functionality.
 - Breaking changes: Changes that break existing functionality, such as API changes, removed features, or changes in behavior. These should be clearly marked and described in detail to help users understand the impact of the change and how to adapt their code if necessary.
+
+# Money type
+
+The `Money` record wraps a raw `long amount` — the unscaled integer that PostgreSQL stores
+internally for the `money` type. It does **not** store the scale itself, because the scale is a
+database-level configuration property (`lc_monetary`), not a property of the value.
+
+## Constructing a codec
+
+Use `Codec.MONEY` for the common 2-decimal (cents) case, or `Codec.money(int decimals)` when the
+database uses a different scale (e.g. `0` for Japanese yen):
+
+```java
+Codec<Money> twoDecimalMoney = Codec.MONEY;          // lc_monetary with 2 decimals
+Codec<Money> zeroDecimalMoney = Codec.money(0);      // lc_monetary with 0 decimals
+```
+
+## Conversions with BigDecimal
+
+Convert between `Money` and `BigDecimal` by passing the same `decimals` value used by the codec:
+
+```java
+int decimals = 2;
+
+// BigDecimal → Money
+Money price = Money.of(new BigDecimal("12.34"), decimals);  // amount = 1234
+
+// Money → BigDecimal
+BigDecimal decimal = price.toBigDecimal(decimals);          // 12.34
+```
+
+`Money.of` throws `ArithmeticException` if the value has more fractional digits than `decimals`
+allows, or if the scaled result overflows a `long`.
+

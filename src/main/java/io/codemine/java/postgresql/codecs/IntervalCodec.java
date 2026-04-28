@@ -67,7 +67,7 @@ final class IntervalCodec implements Codec<Interval> {
     long time = buf.getLong();
     int day = buf.getInt();
     int month = buf.getInt();
-    return new Interval(time, day, month);
+    return new Interval(month, day, time);
   }
 
   @Override
@@ -79,7 +79,7 @@ final class IntervalCodec implements Codec<Interval> {
     long time = r.nextLong(-timeBound, timeBound + 1);
     int day = r.nextInt(2 * size + 1) - size;
     int month = r.nextInt(2 * size + 1) - size;
-    return new Interval(time, day, month);
+    return new Interval(month, day, time);
   }
 
   /** Parses a PG interval output string. */
@@ -122,7 +122,7 @@ final class IntervalCodec implements Codec<Interval> {
     }
 
     int totalMonths = years * 12 + mons;
-    return new Interval(timeMicros, days, totalMonths);
+    return new Interval(totalMonths, days, timeMicros);
   }
 
   /** Parses a time component like "04:05:06.789" or "-04:05:06". */

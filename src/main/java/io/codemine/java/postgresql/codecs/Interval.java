@@ -4,11 +4,11 @@ package io.codemine.java.postgresql.codecs;
  * PostgreSQL {@code interval} type. A time span with separate month, day, and microsecond
  * components.
  *
- * @param micros time component in microseconds
- * @param days day component
  * @param months month component (may be decomposed into years and months for display)
+ * @param days day component
+ * @param micros time component in microseconds
  */
-public record Interval(long micros, int days, int months) {
+public record Interval(int months, int days, long micros) {
 
   /**
    * Creates an {@code Interval} from a {@link java.time.Duration}. The duration is converted to an
@@ -27,7 +27,7 @@ public record Interval(long micros, int days, int months) {
     long months = days / 30L;
     days %= 30L;
     long micros = seconds * 1_000_000L + nanos / 1000;
-    return new Interval(micros, (int) days, (int) months);
+    return new Interval((int) months, (int) days, micros);
   }
 
   /**

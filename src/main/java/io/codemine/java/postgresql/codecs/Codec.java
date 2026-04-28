@@ -46,7 +46,7 @@ public interface Codec<A> {
   Codec<String> VARCHAR = new VarcharCodec();
   Codec<String> BPCHAR = new BpcharCodec();
   Codec<Byte> CHAR = new CharCodec();
-  Codec<Integer> OID = new OidCodec();
+  Codec<Long> OID = new OidCodec();
   Codec<java.time.LocalDate> DATE = new DateCodec();
   Codec<java.time.LocalTime> TIME = new TimeCodec();
   Codec<Timetz> TIMETZ = new TimetzCodec();

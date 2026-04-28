@@ -5,7 +5,9 @@ import java.nio.ByteBuffer;
 import java.util.Random;
 
 /** Codec for PostgreSQL {@code oid} values. */
-final class OidCodec implements Codec<Integer> {
+final class OidCodec implements Codec<Long> {
+
+  private static final long MAX_OID = 0xFFFFFFFFL;
 
   @Override
   public String name() {
@@ -23,16 +25,19 @@ final class OidCodec implements Codec<Integer> {
   }
 
   @Override
-  public void encodeInText(StringBuilder sb, Integer value) {
-    sb.append(Integer.toUnsignedString(value));
+  public void encodeInText(StringBuilder sb, Long value) {
+    sb.append(Long.toUnsignedString(value));
   }
 
   @Override
-  public Codec.ParsingResult<Integer> decodeInText(CharSequence input, int offset)
+  public Codec.ParsingResult<Long> decodeInText(CharSequence input, int offset)
       throws Codec.DecodingException {
     try {
-      int value =
-          Integer.parseUnsignedInt(input.subSequence(offset, input.length()).toString().trim());
+      long value =
+          Long.parseUnsignedLong(input.subSequence(offset, input.length()).toString().trim());
+      if (value > MAX_OID) {
+        throw new Codec.DecodingException(input, offset, "OID out of range: " + value);
+      }
       return new Codec.ParsingResult<>(value, input.length());
     } catch (NumberFormatException e) {
       throw new Codec.DecodingException(input, offset, "Invalid oid: " + e.getMessage());
@@ -40,23 +45,26 @@ final class OidCodec implements Codec<Integer> {
   }
 
   @Override
-  public void encodeInBinary(Integer value, ByteArrayOutputStream out) {
-    out.write((value >>> 24) & 0xFF);
-    out.write((value >>> 16) & 0xFF);
-    out.write((value >>> 8) & 0xFF);
-    out.write(value & 0xFF);
-  }
-
-  @Override
-  public Integer decodeInBinary(ByteBuffer buf, int length) {
-    return buf.getInt();
-  }
-
-  @Override
-  public Integer random(Random r, int size) {
-    if (size == 0) {
-      return 0;
+  public void encodeInBinary(Long value, ByteArrayOutputStream out) {
+    if (value < 0 || value > MAX_OID) {
+      throw new IllegalArgumentException("OID out of range: " + value);
     }
-    return r.nextInt(size);
+    out.write((int) ((value >>> 24) & 0xFF));
+    out.write((int) ((value >>> 16) & 0xFF));
+    out.write((int) ((value >>> 8) & 0xFF));
+    out.write((int) (value & 0xFF));
+  }
+
+  @Override
+  public Long decodeInBinary(ByteBuffer buf, int length) {
+    return buf.getInt() & 0xFFFFFFFFL;
+  }
+
+  @Override
+  public Long random(Random r, int size) {
+    if (size == 0) {
+      return 0L;
+    }
+    return (long) r.nextInt(size);
   }
 }

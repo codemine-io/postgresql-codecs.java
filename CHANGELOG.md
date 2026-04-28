@@ -1,5 +1,10 @@
 # Unreleased
 
+## Non-breaking
+
+- Added `Timetz.of(OffsetTime)` and `Timetz.toOffsetTime()` helpers for converting PostgreSQL
+	`timetz` values to and from `java.time.OffsetTime` with microsecond precision.
+
 ## Breaking
 
 - `Interval` field `time` renamed to `micros`.

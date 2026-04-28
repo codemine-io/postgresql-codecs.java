@@ -1,5 +1,9 @@
 package io.codemine.java.postgresql.codecs;
 
+import java.time.LocalTime;
+import java.time.OffsetTime;
+import java.time.ZoneOffset;
+
 /**
  * PostgreSQL {@code timetz} type. Time of day with time zone.
  *
@@ -8,6 +12,23 @@ package io.codemine.java.postgresql.codecs;
  *     is stored as {@code -3600}
  */
 public record Timetz(long time, int zone) {
+
+  /**
+   * Creates a {@code Timetz} from a {@link OffsetTime}.
+   *
+   * <p>PostgreSQL stores {@code timetz} with microsecond precision, so any nanoseconds beyond the
+   * first 6 digits are truncated.
+   */
+  public static Timetz of(OffsetTime value) {
+    long micros = value.toLocalTime().toNanoOfDay() / 1_000L;
+    return new Timetz(micros, -value.getOffset().getTotalSeconds());
+  }
+
+  /** Converts this {@code Timetz} to an {@link OffsetTime}. */
+  public OffsetTime toOffsetTime() {
+    return OffsetTime.of(LocalTime.ofNanoOfDay(time * 1_000L), ZoneOffset.ofTotalSeconds(-zone));
+  }
+
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
